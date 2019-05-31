@@ -8,11 +8,11 @@ Tags: envios, zippin, argentina, shipping
 
 Requires at least: 4.6
 
-Tested up to: 4.9.6
+Tested up to: 5.2.1
 
 Requires PHP: 5.6
 
-Stable tag: 1.2
+Stable tag: 1.0
 
 Language: Spanish
 
@@ -26,7 +26,7 @@ Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo Argentina.
 
 == Installation ==
 
-1. Instalar el plugin directamente a través de WordPress. Alternativamente, se pueden subir todos los archivos del plugin a la carpeta `/wp-content/plugins/zippin_woocommerce`.
+1. Instalar el plugin directamente a través de WordPress. Alternativamente, se pueden subir todos los archivos del plugin a la carpeta `/wp-content/plugins/woocommerce-zippin`.
 2. Activar el plugin en WordPress desde la sección Plugins.
 3. Configurar el plugin desde Ajustes > Configuración de Zippin
 4. Configurar los tipos de servicio en la configuracion de Envíos y Zonas de Woocommerce (Woocommerce > Settings > Shipping > Argentina > Envío con Zippin)
