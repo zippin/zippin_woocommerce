@@ -7,7 +7,6 @@ Description: Integra WooCommerce con Zippin para realizar envíos a todo el paí
 Version: 1.0
 Author: Zippin
 Requires PHP: 7
-Author URI: https://www.zippin.com.ar
 License: GPL2
 License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  */
