@@ -77,6 +77,15 @@ function init_settings()
     );
 
     add_settings_field(
+        'enable_free_shipping_creation',
+        'Crear envíos con Envío Gratis',
+        __NAMESPACE__ . '\print_free_shipping_creation',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
+
+    add_settings_field(
         'extra_info',
         'Información adicional',
         __NAMESPACE__ . '\print_extra_info',
@@ -163,6 +172,16 @@ function print_default_shipping_status()
     echo '<p class="info-text">Los pedidos con este estado serán enviados automáticamente a Zippin</p>';
 }
 
+function print_free_shipping_creation()
+{
+    $previous_config = get_option('zippin_create_free_shipments');
+    echo '<p><label><input type="radio" name="enable_free_shipping_creation" value="yes"'.($previous_config=='yes' ? ' checked':'').'> Si</label> ';
+    echo '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="enable_free_shipping_creation" value="no"'.($previous_config=='no' || empty($previous_config) ? ' checked':'').'> No</label></p>';
+    echo '<p class="info-text">Si habilitas esta opción, tambien se crearán en Zippin los envíos con Envío gratis. La selección del transporte será automática según la configuración de tu cuenta. <br>
+<small>Aprende <a href="https://docs.woocommerce.com/document/free-shipping/" target="_blank">cómo configurar envío gratis en Woocomerce</a> y configura en Zippin <a target="_blank" href="https://app.zippin.com.ar/myaccount/account/settings">tus opciones de selección de transporte (solapa Opciones)</a>.</small>
+</p>';
+}
+
 
 function print_origins()
 {
@@ -203,7 +222,7 @@ function print_origins()
 
 function print_extra_info()
 {
-    echo '<p class="info-text">Al instalar este plugin podés empezar a usar el shortcode [zippin_tracking]. Coloca este shortcode en cualquier página que desees usar para crear un formulario de rastreo de pedidos de Zippin.</p>';
+    echo '<p class="info-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</p>';
 }
 
 function create_menu_option()
@@ -256,7 +275,13 @@ function settings_page_content()
         update_option('zippin_shipping_status', $_POST['shipping_status']);
     }
 
-	// Save debug
+    // Save shipping status
+    if (isset($_POST['enable_free_shipping_creation'])) {
+        update_option('zippin_create_free_shipments', $_POST['enable_free_shipping_creation']);
+    }
+
+
+    // Save debug
     if (isset($_POST['debug'])) {
         update_option('zippin_debug', $_POST['debug']);
     }

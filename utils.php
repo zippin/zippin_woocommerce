@@ -23,11 +23,21 @@ function update_order_meta($order_id)
     $chosen_shipping_method = WC()->session->get('chosen_shipping_methods');
     $chosen_shipping_method = reset($chosen_shipping_method);
     $chosen_shipping_method = explode("|", $chosen_shipping_method);
-    if ($chosen_shipping_method[0] === 'zippin') {
+    $chosen_shipping_method[0] = explode(":", $chosen_shipping_method[0])[0];
+    wc_get_logger()->info(print_r($chosen_shipping_method,1));
+
+    if ($chosen_shipping_method[0] === 'zippin' || ($chosen_shipping_method[0]=='free_shipping' && get_option('zippin_create_free_shipments') == 'yes')) {
         // Save shipment preferences (carrier and service)
         $data = array();
-        $data['carrier_id'] = $chosen_shipping_method[1];
-        $data['service_type'] = $chosen_shipping_method[2];
+
+        if($chosen_shipping_method[0] === 'zippin') {
+            $data['carrier_id'] = $chosen_shipping_method[1];
+            $data['service_type'] = $chosen_shipping_method[2];
+        } else {
+            $data['carrier_id'] = null;
+            $data['service_type'] = null;
+        }
+
         $order->update_meta_data('zippin_shipping_info', serialize($data));
         $order->save();
 
@@ -51,18 +61,20 @@ function process_order_status($order_id, $old_status, $new_status)
     $shipment_creation_trigger_status = get_option('zippin_shipping_status');
 
     if (!$order || !$shipment_creation_trigger_status) return false;
-    if ($order_shipping_method !== 'zippin') return false;
+    if (!in_array($order_shipping_method, ['zippin','free_shipping'])) return false;
 
     if ($order->get_meta('zippin_shipment', true)) {
         // Ya hay un envío creado
-        if ((('wc-' . $new_status) === $shipment_creation_trigger_status) || ($new_status === $shipment_creation_trigger_status)) {
+        if (in_array($shipment_creation_trigger_status, ['wc-'.$new_status, $new_status])) {
             // El estado es el estado en que hay crear envio.
             // No hacer nada
         }
 
     } else {
         // NO hay un envío creado
-        if ((('wc-' . $new_status) === $shipment_creation_trigger_status) || ($new_status === $shipment_creation_trigger_status)) {
+        if ($order->get_meta('zippin_shipping_info', true) && in_array($shipment_creation_trigger_status, ['wc-'.$new_status, $new_status])) {
+            wc_get_logger()->info('Creating shipment in zippin...');
+
             $connector = new ZippinConnector;
             $shipment = $connector->create_shipment($order);
 
@@ -71,6 +83,8 @@ function process_order_status($order_id, $old_status, $new_status)
                 $order->update_meta_data('zippin_shipment', serialize($shipment));
                 $order->add_order_note('Se creó el envío en Zippin (ID: '.$shipment['id'].')');
                 $order->save();
+            } else {
+                wc_get_logger()->info('Shipment not created');
             }
         }
 
@@ -78,7 +92,7 @@ function process_order_status($order_id, $old_status, $new_status)
 }
 
 
-function add_box()
+function add_order_side_box()
 {
     global $post;
     $order = wc_get_order($post->ID);
@@ -92,7 +106,9 @@ function add_box()
     }
     $chosen_shipping_method_id = $chosen_shipping_method->get_method_id();
     $chosen_shipping_method = explode("|", $chosen_shipping_method_id);
-    if ($chosen_shipping_method[0] === 'zippin') {
+    $shipping_info = $order->get_meta('zippin_shipping_info', true);
+
+    if ($chosen_shipping_method[0] === 'zippin' || strlen($shipping_info)>0) {
         add_meta_box(
             'zippin_box',
             '<img src="https://static-ar.zippin.app/images/logo_envios.png" title="Zippin" style="height: 20px">',
@@ -128,8 +144,12 @@ function box_content()
     echo '<br>Destino: <br>&nbsp;&nbsp;&nbsp;&nbsp;<b>'.$shipment['destination']['name'].'</b><br>
             &nbsp;&nbsp;&nbsp;&nbsp;'.$shipment['destination']['street'].' '.$shipment['destination']['street_number'].' '.$shipment['destination']['street_extras'].'<br>
             &nbsp;&nbsp;&nbsp;&nbsp;'.$shipment['destination']['city'].', '.$shipment['destination']['state'].' ('.$shipment['destination']['zipcode'].')';
-    
-    echo '<p><a class="button button-primary" target="_blank" href="https://app.zippin.com.ar/shipments/'.$shipment['id'].'/download_documentation?format=pdf">Descargar Etiquetas</a> <a class="button" target="_blank" href="'.$shipment['tracking'].'">Ver Tracking</a></p>';
+
+    echo '<p>';
+    if (in_array($shipment['status'],['documentation_ready','ready_to_ship'])) {
+        echo '<a class="button button-primary" target="_blank" href="https://app.zippin.com.ar/shipments/' . $shipment['id'] . '/download_documentation?format=pdf">Descargar Etiquetas</a>';
+    }
+    echo ' <a class="button" target="_blank" href="'.$shipment['tracking'].'">Ver Tracking</a></p>';
 
 }
 
@@ -248,8 +268,9 @@ function create_settings_link($links)
 function zippin_add_free_shipping_label($label, $method)
 {
     $label_tmp = explode(':', $label);
-    if ($method->get_cost() == 0) {
-        $label = $label_tmp[0] . __(' - ¡Envío Gratis!', 'woocommerce');
+    if ($method->get_cost() == 0 && get_option('zippin_create_free_shipments') == 'yes') {
+        //$label = $label_tmp[0] . __(' - ¡Envío Gratis!', 'woocommerce');
+        // TODO: Agregar tiempo de entrega de opción ganadora al resultado de free shipping.
     }
     return $label;
 }

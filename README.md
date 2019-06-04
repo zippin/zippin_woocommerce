@@ -2,7 +2,7 @@
 
 Contributors: Envios Digitales S.A.
 
-Donate link: 
+Donate link: https://www.zippin.com.ar
 
 Tags: envios, zippin, argentina, shipping
 
@@ -35,6 +35,7 @@ Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo Argentina.
 
 = 1.0 =
 * Primer versión. Permite conectar la cuenta, cotizar y crear envíos.
+
 
 == Screenshots ==
 
