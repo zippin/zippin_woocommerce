@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
-define('LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
+define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
 define('ZIPPIN_APIKEY', '');
 define('ZIPPIN_SECRETKEY', '');
 
@@ -30,9 +30,9 @@ require_once 'hooks.php';
 require_once 'helper.php';
 require_once 'utils.php';
 
-add_filter('gettext', 'z_translate_words_array', 20, 3);
-add_filter('ngettext', 'z_translate_words_array', 20, 3);
-function z_translate_words_array($translation, $text, $domain)
+add_filter('gettext', 'zippin_translate_words_array', 20, 3);
+add_filter('ngettext', 'zippin_translate_words_array', 20, 3);
+function zippin_translate_words_array($translation, $text, $domain)
 {
     if ($text === 'Enter your address to view shipping options.') {
         $translation = 'Ingresá tu dirección para conocer los costos de envio';

@@ -244,59 +244,60 @@ function settings_page_content()
 
 	// Save api_key
     if (isset($_POST['api_key'])) {
-        update_option('zippin_api_key', $_POST['api_key']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_api_key', sanitize_text_field($_POST['api_key']));
     }
 
 	// Save api_secret
     if (isset($_POST['api_secret'])) {
-        update_option('zippin_api_secret', $_POST['api_secret']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_api_secret', sanitize_text_field($_POST['api_secret']));
     }
 
     // Save account_id
     if (isset($_POST['account_id'])) {
-        if (get_option('zippin_account_id') != $_POST['account_id']) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        if (get_option('zippin_account_id') != filter_var($_POST['account_id'],FILTER_SANITIZE_NUMBER_INT)) {
             delete_option('zippin_origin_id');
         }
-        update_option('zippin_account_id', $_POST['account_id']);
+        update_option('zippin_account_id', filter_var($_POST['account_id'],FILTER_SANITIZE_NUMBER_INT));
     }
 
     // Save origin id
     if (isset($_POST['origin_id'])) {
-        update_option('zippin_origin_id', $_POST['origin_id']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_origin_id', filter_var($_POST['origin_id'],FILTER_SANITIZE_NUMBER_INT));
     }
 
 	// Save packaging mode
     if (isset($_POST['packaging_mode'])) {
-        update_option('zippin_packaging_mode', $_POST['packaging_mode']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_packaging_mode', sanitize_text_field($_POST['packaging_mode']));
     }
 
 	// Save shipping status
     if (isset($_POST['shipping_status'])) {
-        update_option('zippin_shipping_status', $_POST['shipping_status']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_shipping_status', sanitize_text_field($_POST['shipping_status']));
     }
 
     // Save shipping status
     if (isset($_POST['enable_free_shipping_creation'])) {
-        update_option('zippin_create_free_shipments', $_POST['enable_free_shipping_creation']);
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_create_free_shipments', sanitize_text_field($_POST['enable_free_shipping_creation']));
     }
-
-
-    // Save debug
-    if (isset($_POST['debug'])) {
-        update_option('zippin_debug', $_POST['debug']);
-    }
-
     ?>
 
 	<div class="wrap">
-        <img src="https://static-ar.zippin.app/images/logo_envios.png" />
+        <img src="<?=plugin_dir_url(__FILE__) ?>images/zippin.png" />
 		<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 		<form action="options-general.php?page=zippin_settings" method="post">
-			<?php
-    settings_fields('zippin_settings');
-    do_settings_sections('zippin_settings');
-    submit_button('Guardar');
-    ?>
+        <?php
+        wp_nonce_field('zippin_settings_save','zippin_wpnonce',false,true);
+        settings_fields('zippin_settings');
+        do_settings_sections('zippin_settings');
+        submit_button('Guardar');
+        ?>
 		</form>
 	</div>
 	<?php

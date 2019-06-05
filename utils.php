@@ -111,7 +111,7 @@ function add_order_side_box()
     if ($chosen_shipping_method[0] === 'zippin' || strlen($shipping_info)>0) {
         add_meta_box(
             'zippin_box',
-            '<img src="https://static-ar.zippin.app/images/logo_envios.png" title="Zippin" style="height: 20px">',
+            '<img src="'.plugin_dir_url(__FILE__) . 'images/zippin.png" title="Zippin" style="height: 20px">',
             __NAMESPACE__ . '\box_content',
             'shop_order',
             'side'
@@ -225,7 +225,7 @@ function create_shortcode()
         if (!$order) {
             echo '<p class="zippin-tracking-result-error">No se encontró una orden con los datos ingresados.</p>';
 
-        } elseif ($order->get_billing_email() != trim($_GET['zippin_tracking_order_email'])) {
+        } elseif ($order->get_billing_email() != sanitize_email($_GET['zippin_tracking_order_email'])) {
             echo '<p class="zippin-tracking-result-error">No se encontró una orden con los datos ingresados.</p>';
 
         } elseif(!$order->get_meta('zippin_shipment', true)) {
@@ -250,8 +250,8 @@ function create_shortcode()
     }
 
     $content .= '<form method="get" class="zippin-tracking-form">
-		<input type="text" value="'.$_GET['zippin_tracking_order_id'].'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
-		<input type="email" value="'.$_GET['zippin_tracking_order_email'].'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
+		<input type="text" value="'.filter_var($_GET['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT).'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
+		<input type="email" value="'.sanitize_email($_GET['zippin_tracking_order_email']).'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
 		<br />
 		<input type="submit" value="Consultar estado" id="update_button" class="zippin-tracking-form-submit update_button" style="cursor: pointer;"/>
 		</form>';

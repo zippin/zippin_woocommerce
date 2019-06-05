@@ -356,7 +356,7 @@ class Helper
             $product_id = $item['data']->get_id();
             $product = $this->get_product_dimensions($product_id);
             if (!$product) {
-                $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, producto con malas dimensiones - ID: ' . $product_id, unserialize(LOGGER_CONTEXT));
+                $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
             for ($i = 0; $i < $item['quantity']; $i++) {
@@ -367,7 +367,7 @@ class Helper
         $packages = $this->get_packages_from_products($products);
 
         if (!$packages) {
-            $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, productos con malas dimensiones/peso', unserialize(LOGGER_CONTEXT));
+            $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 
@@ -387,7 +387,7 @@ class Helper
                 $product_id = $item->get_product_id();
             $product = $this->get_product_dimensions($product_id);
             if (!$product) {
-                $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, producto con malas dimensiones - ID: ' . $product_id, unserialize(LOGGER_CONTEXT));
+                $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
             for ($i = 0; $i < $item->get_quantity(); $i++) {
@@ -397,7 +397,7 @@ class Helper
 
         $packages = $this->get_packages_from_products($products);
         if (!$packages) {
-            $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, productos con malas dimensiones/peso', unserialize(LOGGER_CONTEXT));
+            $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 
