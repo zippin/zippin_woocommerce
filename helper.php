@@ -299,8 +299,8 @@ class Helper
                     'height' => $product['height'],
                     'width' => $product['width'],
                     'length' => $product['length'],
-                    'description_1' => $product['sku'],
-                    'description_2' => $product['name']
+                    'description_1' => substr($product['sku'],0,60),
+                    'description_2' => substr($product['name'],0,60)
                 );
             }
         }
@@ -314,7 +314,7 @@ class Helper
                 'height' => $side,
                 'width' => $side,
                 'length' => $side,
-                'description_1' => implode('_',$skus),
+                'description_1' => substr(implode('_',$skus),0,60),
             );
         }
 
