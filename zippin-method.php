@@ -57,6 +57,7 @@ function zippin_init()
 
             public function calculate_shipping($package = array())
             {
+                $helper = new Helper();
 
                 // Prepare packages
                 $products = $this->get_products_from_cart();
@@ -72,6 +73,8 @@ function zippin_init()
                 if (empty($destination['state'])) {
                     $destination['state'] = WC()->customer->get_billing_state();
                 }
+                $destination['state'] = $helper->get_province_name($destination['state']);
+
                 $destination['city'] = WC()->customer->get_shipping_city();
                 if (empty($destination['city'])) {
                     $destination['city'] = WC()->customer->get_billing_city();

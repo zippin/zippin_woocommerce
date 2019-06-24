@@ -13,7 +13,7 @@ class ZippinConnector
 {
     private $api_key, $api_secret, $account_id;
 
-    const VERSION = '1.0';
+    const VERSION = '11';
 
     public function __construct()
     {
@@ -68,7 +68,7 @@ class ZippinConnector
             'origin_id' => $this->get_origin_id(),
             'external_id' => 'W'.$order->get_id(),
             'source' => 'woocommerce_'.self::VERSION,   // Por favor dejar para poder dar mejor soporte.
-            'declared_value' => $order->get_total(),
+            'declared_value' => round(floatval($order->get_total()),2),
             'packages' => $products['packages'],
             'destination' => $destination
         );
@@ -95,16 +95,8 @@ class ZippinConnector
             return $response;
 
         } else {
-            $this->logger->error('Zippin: Crear pedido - Error del servidor codigo: ' . (isset($response['response']['code']) ? $response['response']['code'] : 'Sin codigo'), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $response = json_decode($response['body'], true);
-            $this->logger->error('Zippin: Crear pedido - Error del servidor mensaje: ' . (isset($response['message']) && isset($response['errors']['global'][0])) ? $response['message'] . ': ' . $response['errors']['global'][0] : 'Sin mensaje', unserialize(ZIPPIN_LOGGER_CONTEXT));
-
-            foreach ($response['errors'] as $key => $value) {
-                foreach ($value as $response_key => $response_error) {
-                    $this->logger->error('Zippin: Response errors:  ' . $key . ' -> ' . $response_key . ' -> ' . $response_error, unserialize(ZIPPIN_LOGGER_CONTEXT));
-                }
-            }
-            $this->logger->error('Zippin: Crear envio - Data enviada: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Crear envio - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->info('Zippin: Crear envio - Request: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 
@@ -134,9 +126,7 @@ class ZippinConnector
             return $new_addresses;
 
         } else {
-            $this->logger->error('Zippin: Direcciones de Envio - Error del servidor codigo: ' . (isset($response['response']['code']) ? $response['response']['code'] : 'Sin codigo'), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $response = json_decode($response['body'], true);
-            $this->logger->error('Zippin: Direcciones de Envio - Error del servidor mensaje: ' . (isset($response['message']) && isset($response['errors']['global'][0])) ? $response['message'] . ': ' . $response['errors']['global'][0] : 'Sin mensaje', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Obtener Origenes (account '.$this->get_account_id().') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
@@ -154,9 +144,7 @@ class ZippinConnector
             return json_decode($response['body'], true);
 
         } else {
-            $this->logger->error('Zippin: Cuenta - Error del servidor codigo: ' . (isset($response['response']['code']) ? $response['response']['code'] : 'Sin codigo'), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $response = json_decode($response['body'], true);
-            $this->logger->error('Zippin: Cuenta - Error del servidor mensaje: ' . (isset($response['message']) && isset($response['errors']['global'][0])) ? $response['message'] . ': ' . $response['errors']['global'][0] : 'Sin mensaje', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Obtener cuenta ('.$this->get_account_id().') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
@@ -174,9 +162,7 @@ class ZippinConnector
             return json_decode($response['body'], true);
 
         } else {
-            $this->logger->error('Zippin: Shipment - Error del servidor codigo: ' . (isset($response['response']['code']) ? $response['response']['code'] : 'Sin codigo'), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $response = json_decode($response['body'], true);
-            $this->logger->error('Zippin: Shipment - Error del servidor mensaje: ' . (isset($response['message']) && isset($response['errors']['global'][0])) ? $response['message'] . ': ' . $response['errors']['global'][0] : 'Sin mensaje', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Obtener Shipment ('.$shipment_id.') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
@@ -186,7 +172,7 @@ class ZippinConnector
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
-            'declared_value' => floatval($declared_value),
+            'declared_value' => round(floatval($declared_value),2),
             'packages' => $packages,
             'destination' => $destination
         );
@@ -221,9 +207,8 @@ class ZippinConnector
             return $quote_results;
 
         } else {
-            $this->logger->error('Zippin: Cotizar - Error del servidor codigo: ' . (isset($response['response']['code']) ? $response['response']['code'] : 'Sin codigo'), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $response = json_decode($response['body'], true);
-            $this->logger->error('Zippin: Cotizar - Error del servidor mensaje: ' . (isset($response['message']) && isset($response['errors']['global'][0])) ? $response['message'] . ': ' . $response['errors']['global'][0] : 'Sin mensaje', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Cotizar envio - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->info('Zippin: Cotizar envio - Request: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
@@ -263,6 +248,7 @@ class ZippinConnector
 
             if ($response['response']['code'] != 200 && $response['response']['code'] != 201) {
                 $this->logger->error('Error '.$response['response']['code'].' desde la api: '.print_r($response['body'],1), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $this->logger->info('Request params: '.wc_print_r(json_encode($params), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             } else {
             // Success

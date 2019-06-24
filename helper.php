@@ -295,10 +295,10 @@ class Helper
             if (get_option('zippin_packaging_mode') != 'grouped') {
                 $products['packages'][] = array(
                     'classification_id' => 1,
-                    'weight' => $product['weight'],
-                    'height' => $product['height'],
-                    'width' => $product['width'],
-                    'length' => $product['length'],
+                    'weight' => intval(ceil($product['weight'])),
+                    'height' => intval(ceil($product['height'])),
+                    'width' => intval(ceil($product['width'])),
+                    'length' => intval(ceil($product['length'])),
                     'description_1' => substr($product['sku'],0,60),
                     'description_2' => substr($product['name'],0,60)
                 );
@@ -307,10 +307,10 @@ class Helper
 
         // One package grouping all products
         if (get_option('zippin_packaging_mode') == 'grouped') {
-            $side = pow($products['shipping_info']['total_volume'],1/3);
+            $side = intval(ceil(pow($products['shipping_info']['total_volume'],1/3)));
             $products['packages'][] = array(
                 'classification_id' => 1,
-                'weight' => $products['shipping_info']['total_weight'],
+                'weight' => intval(ceil($products['shipping_info']['total_weight'])),
                 'height' => $side,
                 'width' => $side,
                 'length' => $side,
