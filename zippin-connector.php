@@ -13,7 +13,7 @@ class ZippinConnector
 {
     private $api_key, $api_secret, $account_id;
 
-    const VERSION = '11';
+    const VERSION = '1_2';
 
     public function __construct()
     {
@@ -56,6 +56,9 @@ class ZippinConnector
 
         $helper = new Helper($order);
         $shipment_info = unserialize($order->get_meta('zippin_shipping_info', true));
+        if (!isset($shipment_info['logistic_type'])) {
+            $shipment_info['logistic_type'] = null;
+        }
 
         // Prepare packages
         $products = $helper->get_items_from_order($order);
@@ -72,6 +75,12 @@ class ZippinConnector
             'packages' => $products['packages'],
             'destination' => $destination
         );
+
+        if (!is_null($shipment_info['logistic_type'])) {
+            $payload['logistic_type'] = $shipment_info['logistic_type'];
+        } elseif (strval($this->origin_id) == '32') {
+            $payload['logistic_type'] = 'fulfillment';
+        }
 
         if (!is_null($shipment_info['carrier_id'])) {
             $payload['carrier_id'] = $shipment_info['carrier_id'];
@@ -201,13 +210,13 @@ class ZippinConnector
                 $quote_result['service_name'] = $result['carrier']['name'].' - '.$result['service_type']['name'];
                 $quote_result['shipping_time'] = $result['delivery_time']['max']*24;
                 $quote_result['price'] = $result['amounts']['price_incl_tax'];
-                $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'];
+                $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
                 $quote_results[] = $quote_result;
             }
             return $quote_results;
 
         } else {
-            $this->logger->error('Zippin: Cotizar envio - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zippin: Cotizar envio - Errors: '.wc_print_r($response, true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             $this->logger->info('Zippin: Cotizar envio - Request: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
@@ -224,6 +233,7 @@ class ZippinConnector
             $url = 'https://api.zippin.com.ar/v2' . $endpoint;
             $args = array(
                 'headers' => $headers,
+                'timeout' => 10
             );
 
             if ($method === 'GET') {
