@@ -33,9 +33,13 @@ function update_order_meta($order_id)
         if($chosen_shipping_method[0] === 'zippin') {
             $data['carrier_id'] = $chosen_shipping_method[1];
             $data['service_type'] = $chosen_shipping_method[2];
+            if (isset($chosen_shipping_method[3])) {
+                $data['logistic_type'] = $chosen_shipping_method[3];
+            }
         } else {
             $data['carrier_id'] = null;
             $data['service_type'] = null;
+            $data['logistic_type'] = null;
         }
 
         $order->update_meta_data('zippin_shipping_info', serialize($data));
@@ -290,7 +294,7 @@ function handle_webhook()
     $data = json_decode($raw_post, 1);
     wc_get_logger()->info('Incoming zippin webhook:' . wc_print_r($data, 1));
 
-    if ($data['topic'] == 'status') {
+    if ($data['topic'] == 'status' || $data['topic'] == 'shipment') {
         $connector = new ZippinConnector;
         $shipment = $connector->get_shipment($data['data']['shipment_id']);
 
