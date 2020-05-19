@@ -287,9 +287,15 @@ class Helper
         $skus = array();
 
         foreach ($products['products'] as $index => $product) {
+            // $product is https://docs.woocommerce.com/wc-apidocs/class-WC_Product.html
+            $sku = $product['sku'];
+            if (empty($sku)) {
+                $sku = 'id'.$product['id'];
+            }
+
             $products['shipping_info']['total_weight'] += $product['weight'];
             $products['shipping_info']['total_volume'] += $product['height'] * $product['width'] * $product['length'];
-            $skus[] = $product['sku'];
+            $skus[] = $sku;
 
             // One package per unit of product sold
             if (get_option('zippin_packaging_mode') != 'grouped') {
@@ -299,7 +305,7 @@ class Helper
                     'height' => intval(ceil($product['height'])),
                     'width' => intval(ceil($product['width'])),
                     'length' => intval(ceil($product['length'])),
-                    'description_1' => substr($product['sku'],0,60),
+                    'description_1' => substr($sku,0,60),
                     'description_2' => substr($product['name'],0,60)
                 );
             }
@@ -335,10 +341,10 @@ class Helper
             'id' => $product_id,
             'name' => $product->get_name(),
             'sku' => $product->get_sku(),
-            'height' => ($product->get_height() ? wc_get_dimension($product->get_height(), 'cm') : '0'),
-            'width' => ($product->get_width() ? wc_get_dimension($product->get_width(), 'cm') : '0'),
-            'length' => ($product->get_length() ? wc_get_dimension($product->get_length(), 'cm') : '0'),
-            'weight' => ($product->has_weight() ? wc_get_weight($product->get_weight(), 'kg')*1000 : '0'),
+            'height' => ceil($product->get_height() ? wc_get_dimension($product->get_height(), 'cm') : '0'),
+            'width' => ceil($product->get_width() ? wc_get_dimension($product->get_width(), 'cm') : '0'),
+            'length' => ceil($product->get_length() ? wc_get_dimension($product->get_length(), 'cm') : '0'),
+            'weight' => ceil($product->has_weight() ? wc_get_weight($product->get_weight(), 'kg')*1000 : '0'),
         );
         return $new_product;
     }
