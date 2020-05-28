@@ -163,8 +163,8 @@ function box_content()
 
 function add_action_button($actions, $order)
 {
-
-    $chosen_shipping_method = reset($order->get_shipping_methods());
+    $order_shipping_methods = $order->get_shipping_methods();
+    $chosen_shipping_method = reset($order_shipping_methods);
     if (!$chosen_shipping_method) {
         return $actions;
     }
