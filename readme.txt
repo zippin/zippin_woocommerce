@@ -1,11 +1,11 @@
 === Envios con Zippin en Woocommerce ===
-Contributors: zippindevelopers
-Donate link: https://www.zippin.com.ar
-Tags: envios, zippin, argentina, shipping, woocommerce
+Contributors: Maxi Sosa
+Donate link: https://lamasonagency.com/
+Tags: envios, zippin, argentina, shipping, woocommerce, lamasonshop
 Requires at least: 4.6
 Tested up to: 5.2.1
 Requires PHP: 5.6
-Stable tag: 1.2
+Stable tag: 1.3
 Language: Spanish
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -56,6 +56,11 @@ Por el momento solo podrás hacer envíos en Argentina.
 
 
 == Changelog ==
+
+= 1.3 =
+Add field Additional Charge
+Change Rol Access
+Change Menu Page
 
 = 1.2 =
 Compatibilidad con atributo logistic type
