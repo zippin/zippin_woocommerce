@@ -65,7 +65,7 @@ function zippin_init()
                 // Create destination object
                 $destination = array();
                 $destination['zipcode'] = WC()->customer->get_shipping_postcode();
-                if (empty($zipcode)) {
+                if (empty($destination['zipcode'])) {
                     $destination['zipcode'] = WC()->customer->get_billing_postcode();
                 }
                 $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
