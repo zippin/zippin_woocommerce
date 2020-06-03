@@ -11,9 +11,9 @@ if (!defined('ABSPATH')) {
 
 class ZippinConnector
 {
-    private $api_key, $api_secret, $account_id;
+    private $api_key, $api_secret, $account_id, $origin_id, $logger;
 
-    const VERSION = '1_2';
+    const VERSION = 'official_1_3';
 
     public function __construct()
     {
@@ -92,36 +92,18 @@ class ZippinConnector
             $payload['service_type'] = 'standard_delivery';
         }
 
-        $response = $this->call_api('POST', '/shipments', $payload);
-
-        if (is_wp_error($response)) {
-            $this->logger->error('Zippin: WP Error al crear pedido: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
+        if ($response = $this->call_api('POST', '/shipments', $payload)) {
+            return json_decode($response['body'], true);
         }
 
-        if ($response['response']['code'] === 201) {
-            $response = json_decode($response['body'], true);
-            return $response;
-
-        } else {
-            $this->logger->error('Zippin: Crear envio - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $this->logger->info('Zippin: Crear envio - Request: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
-        }
+        return false;
 
     }
 
 
     public function get_origins()
     {
-        $response = $this->call_api('GET', '/addresses', array('account_id' => $this->get_account_id()));
-
-        if (is_wp_error($response)) {
-            $this->logger->error('Zippin: WP Error al obtener direcciones de envio: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
-        }
-
-        if ($response['response']['code'] === 200) {
+        if ($response = $this->call_api('GET', '/addresses', array('account_id' => $this->get_account_id()))) {
             $response = json_decode($response['body'], true);
             $new_addresses = array();
 
@@ -135,48 +117,32 @@ class ZippinConnector
             return $new_addresses;
 
         } else {
-            $this->logger->error('Zippin: Obtener Origenes (account '.$this->get_account_id().') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
 
     public function get_account()
     {
-        $response = $this->call_api('GET', '/accounts/'.$this->get_account_id());
-
-        if (is_wp_error($response)) {
-            $this->logger->error('Zippin: WP Error al obtener cuenta: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
-        }
-
-        if ($response['response']['code'] === 200) {
+        if ($response = $this->call_api('GET', '/accounts/'.$this->get_account_id())) {
             return json_decode($response['body'], true);
 
         } else {
-            $this->logger->error('Zippin: Obtener cuenta ('.$this->get_account_id().') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
 
     public function get_shipment($shipment_id)
     {
-        $response = $this->call_api('GET', '/shipments/'.$shipment_id);
 
-        if (is_wp_error($response)) {
-            $this->logger->error('Zippin: WP Error al obtener shipment: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
-        }
-
-        if ($response['response']['code'] === 200) {
+        if ($response = $this->call_api('GET', '/shipments/'.$shipment_id)) {
             return json_decode($response['body'], true);
 
         } else {
-            $this->logger->error('Zippin: Obtener Shipment ('.$shipment_id.') - Errors: '.wc_print_r($response['body'], true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
 
-    public function quote($destination, $packages, $declared_value = 0, $service_types = null)
+    public function quote($destination, $packages, $declared_value = 0, $service_types = null, $mix = null)
     {
         $payload = array(
             'account_id' => $this->get_account_id(),
@@ -186,22 +152,25 @@ class ZippinConnector
             'destination' => $destination
         );
 
-        $response = $this->call_api('POST', '/shipments/quote', $payload);
 
-        if (is_wp_error($response)) {
-            $this->logger->error('Zippin: WP Error al obtener cotizacion de envio: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            return false;
-        }
-
-        if ($response['response']['code'] === 200) {
+        if ($response = $this->call_api('POST', '/shipments/quote', $payload)) {
             $response = json_decode($response['body'], true);
+            $this->logger->info('Quote Log - body: '.wc_print_r(json_encode($payload), true).' - response: '.wc_print_r(json_encode($response), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
 
             $quote_results = array();
+            $service_type_counter = [];
+
             foreach ($response['all_results'] as $result) {
 
                 if (is_array($service_types)) {
                     if (!in_array($result['service_type']['code'], $service_types)) {
                         // Don't add options from disabled service_types
+                        continue;
+                    }
+                    if ($mix == 'first' && count($quote_results)> 0) {
+                        continue;
+                    }
+                    if ($mix == 'first_by_service' && isset($service_type_counter[$result['service_type']['code']])) {
                         continue;
                     }
                 }
@@ -212,12 +181,17 @@ class ZippinConnector
                 $quote_result['price'] = $result['amounts']['price_incl_tax'];
                 $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
                 $quote_results[] = $quote_result;
+
+                if (!isset($service_type_counter[$result['service_type']['code']])) {
+                    $service_type_counter[$result['service_type']['code']] = 1;
+                } else {
+                    $service_type_counter[$result['service_type']['code']]++;
+                }
+
             }
             return $quote_results;
 
         } else {
-            $this->logger->error('Zippin: Cotizar envio - Errors: '.wc_print_r($response, true), unserialize(ZIPPIN_LOGGER_CONTEXT));
-            $this->logger->info('Zippin: Cotizar envio - Request: ' . wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
     }
@@ -252,16 +226,18 @@ class ZippinConnector
 
 
             if (is_wp_error($response)) {
+                // Request failed with local error
                 $this->logger->error('Wordpress error: ' . $response->get_error_message(), unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
 
             if ($response['response']['code'] != 200 && $response['response']['code'] != 201) {
-                $this->logger->error('Error '.$response['response']['code'].' desde la api: '.print_r($response['body'],1), unserialize(ZIPPIN_LOGGER_CONTEXT));
-                $this->logger->info('Request params: '.wc_print_r(json_encode($params), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                // API Request failed
+                $this->logger->error('Error '.$response['response']['code'].' calling '.$endpoint.' - Response: '.wc_print_r(json_encode($response), true).' with params: '.wc_print_r(json_encode($params), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
+
             } else {
-            // Success
+                // Success
                 return $response;
             }
 

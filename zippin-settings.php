@@ -69,6 +69,15 @@ function init_settings()
     );
 
     add_settings_field(
+        'options_mix',
+        'Resultados a mostrar',
+        __NAMESPACE__ . '\print_options_mix',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
+
+    add_settings_field(
         'default_shipping_status',
         'Estado de pedido',
         __NAMESPACE__ . '\print_default_shipping_status',
@@ -78,12 +87,27 @@ function init_settings()
 
     add_settings_field(
         'enable_free_shipping_creation',
-        'Crear envíos con Envío Gratis',
+        'Crear Envíos Gratis con Zippin',
         __NAMESPACE__ . '\print_free_shipping_creation',
         'zippin_settings',
         'zippin_main_section'
     );
 
+    add_settings_field(
+        'free_shipping_threshold',
+        'Ofrecer envío gratis segun valor de orden',
+        __NAMESPACE__ . '\print_free_shipping_threshold',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
+	add_settings_field(
+        'additional_charge',
+        'Cargo Adicional',
+        __NAMESPACE__ . '\print_additional_charge',
+        'zippin_settings',
+        'zippin_main_section'
+    );
 
     add_settings_field(
         'extra_info',
@@ -94,17 +118,10 @@ function init_settings()
     );
 }
 
-function add_assets_files($hook)
-{
-    if ($hook !== 'settings_page_zippin_settings') {
-        return;
-    }
-    wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), 1.0);
-}
 
 function print_instructions()
 {
-    echo 'Para continuar deberás crear credenciales de API v2. Deberás crear un nuevo <b>token de cuenta</b> desde la sección de <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a>';
+    echo '<p>Para continuar deberás crear credenciales de API v2.</p><p>Deberás crear un nuevo <b>token de cuenta</b> desde la sección de <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a>.</p> ';
 }
 
 function print_api_key()
@@ -154,6 +171,15 @@ function print_packaging_mode()
 
 }
 
+function print_options_mix()
+{
+    $previous_config = get_option('zippin_options_mix');
+    echo '<p><label><input type="radio" required name="options_mix" value="first_by_service"'.($previous_config=='first_by_service' || empty($previous_config) ? ' checked':'').'> La mejor opcion por cada tipo de servicio</label></p>';
+    echo '<p><label><input type="radio" required name="options_mix" value="first"'.($previous_config=='first' ? ' checked':'').'> Mostrar un solo resultado entre todos los servicios.</label></p>';
+    echo '<p><label><input type="radio" required name="options_mix" value="all"'.($previous_config=='all' ? ' checked':'').'> Mostrar todas las opciones.</label></p>';
+}
+
+
 
 function print_default_shipping_status()
 {
@@ -182,6 +208,17 @@ function print_free_shipping_creation()
 </p>';
 }
 
+function print_additional_charge(){
+	$previous_config = get_option('zippin_additional_charge');
+    echo '<input type="number" required name="additional_charge" value="' . ($previous_config ? $previous_config : '') . '" />
+	<p class="info-text">El valor numérico ingresado se expresara como porcentaje. Ej: 20%. Dejar en cero para desactivar opción.</p>';
+}
+
+function print_free_shipping_threshold(){
+    $previous_config = get_option('zippin_free_shipping_threshold');
+    echo '<input type="number" name="free_shipping_threshold" value="' . ($previous_config ? $previous_config : '') . '" />
+	<p class="info-text">Hacer que el precio del envío se muestre como gratis si el total de la orden es igual o mayor al valor indicado. Dejar en blanco para desactivar opción.</p>';
+}
 
 function print_origins()
 {
@@ -196,7 +233,7 @@ function print_origins()
         }
         echo '<option value="">Seleccionar Origen...</option>';
         foreach ($addresses as $address) {
-            $show_as = $address['name'].' - '.$address['street'].' '.$address['street_number'].', '.$address['city']['name'];
+            $show_as = '['.$address['id'].'] '.$address['name'].' - '.$address['street'].' '.$address['street_number'].', '.$address['city']['name'];
             if ($previous_config) {
                 if ($previous_config == $address['id']) {
                     echo '<option value="' . $address['id'] . '" selected>' . $show_as . '</option>';
@@ -227,18 +264,19 @@ function print_extra_info()
 
 function create_menu_option()
 {
-    add_options_page(
+    add_menu_page(
         'Configuración de Zippin',
         'Envíos con Zippin',
-        'manage_options',
+        'manage_woocommerce',
         'zippin_settings',
-        __NAMESPACE__ . '\settings_page_content'
+        __NAMESPACE__ . '\settings_page_content',
+		'dashicons-store'
     );
 }
 
 function settings_page_content()
 {
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('manage_woocommerce')) {
         return;
     }
 
@@ -275,6 +313,12 @@ function settings_page_content()
         update_option('zippin_packaging_mode', sanitize_text_field($_POST['packaging_mode']));
     }
 
+    // Save result options mix
+    if (isset($_POST['options_mix'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_options_mix', sanitize_text_field($_POST['options_mix']));
+    }
+
 	// Save shipping status
     if (isset($_POST['shipping_status'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
@@ -286,6 +330,18 @@ function settings_page_content()
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
         update_option('zippin_create_free_shipments', sanitize_text_field($_POST['enable_free_shipping_creation']));
     }
+	
+	if (isset($_POST['additional_charge'])) {
+		wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_additional_charge', filter_var($_POST['additional_charge'],FILTER_SANITIZE_NUMBER_INT));
+    }
+
+    if (isset($_POST['free_shipping_threshold'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_free_shipping_threshold', filter_var($_POST['free_shipping_threshold'],FILTER_SANITIZE_NUMBER_FLOAT));
+    }
+
+
     ?>
 
 	<div class="wrap">
@@ -293,6 +349,7 @@ function settings_page_content()
 		<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 		<form action="options-general.php?page=zippin_settings" method="post">
         <?php
+        wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), 1.0);
         wp_nonce_field('zippin_settings_save','zippin_wpnonce',false,true);
         settings_fields('zippin_settings');
         do_settings_sections('zippin_settings');

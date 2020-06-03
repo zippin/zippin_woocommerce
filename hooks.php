@@ -7,7 +7,6 @@ if (!defined('ABSPATH')) {
 // --- Settings
 add_action('admin_init', 'Zippin\Zippin\Settings\init_settings');
 add_action('admin_menu', 'Zippin\Zippin\Settings\create_menu_option');
-add_action('admin_enqueue_scripts', 'Zippin\Zippin\Settings\add_assets_files');
 
 // --- Method
 add_action('woocommerce_shipping_init', 'Zippin\Zippin\zippin_init');

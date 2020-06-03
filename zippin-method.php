@@ -65,7 +65,7 @@ function zippin_init()
                 // Create destination object
                 $destination = array();
                 $destination['zipcode'] = WC()->customer->get_shipping_postcode();
-                if (empty($zipcode)) {
+                if (empty($destination['zipcode'])) {
                     $destination['zipcode'] = WC()->customer->get_billing_postcode();
                 }
                 $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
@@ -86,24 +86,47 @@ function zippin_init()
                     $declared_value = number_format($declared_value, 2, '.', '');
                 }
 
+                $mix = get_option('zippin_options_mix');
+
                 // Quote and get results
                 $connector = new ZippinConnector;
-                $quote_results = $connector->quote($destination, $products['packages'], $declared_value, $this->get_instance_option('service_types'));
+                $quote_results = $connector->quote($destination, $products['packages'], $declared_value, $this->get_instance_option('service_types'), $mix);
+
+                if (get_option('zippin_additional_charge'))	$additional_charge = get_option('zippin_additional_charge'); else $additional_charge = '0';
+
+                $use_free_shipping = false;
+                if (get_option('zippin_free_shipping_threshold')) {
+                    if (WC()->cart->get_subtotal() >= floatval(get_option('zippin_free_shipping_threshold'))) {
+                        $use_free_shipping = true;
+                    }
+                }
+
                 if ($quote_results) {
                     foreach ($quote_results as $result) {
 
-                        if ($result['shipping_time']>48) {
-                            $time = ($result['shipping_time']/24).' días háb.';
+                        if ($result['shipping_time'] > 48) {
+                            $time = ' (hasta '. ($result['shipping_time']/24).' días háb.)';
+                        } elseif($result['shipping_time'] <= 24) {
+                            $time = '(llega el día del despacho)';
+                        }else {
+                            $time = ' (hasta '. ($result['shipping_time']).' hs.)';
+                        }
+
+                        if ($use_free_shipping) {
+                            $cost = 0;
+                        } elseif (!empty($additional_charge)){
+                            $cost = (isset($result['price']) ? $result['price'] + ($result['price'] * $additional_charge / 100) : 0);
                         } else {
-                            $time = $result['shipping_time']. 'hs.';
+                            $cost = (isset($result['price']) ? $result['price'] : 0);
                         }
 
                         $rate = array(
                             'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : ''),
-                            'label' => $result['service_name'] . ' (hasta ' . $time . ')',
-                            'cost' => (isset($result['price']) ? $result['price'] : 0),
+                            'label' => $result['service_name'] . ' ' . $time,
+                            'cost' => $cost,
                             'calc_tax' => 'per_order'
                         );
+
                         $this->add_rate($rate);
 
                     }

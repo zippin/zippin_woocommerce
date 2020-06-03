@@ -61,7 +61,8 @@ function update_order_meta($order_id)
 function process_order_status($order_id, $old_status, $new_status)
 {
     $order = wc_get_order($order_id);
-    $order_shipping_method = reset($order->get_items('shipping'))->get_method_id();
+    $order_shipping_methods = $order->get_items('shipping');
+    $order_shipping_method = reset($order_shipping_methods)->get_method_id();
     $shipment_creation_trigger_status = get_option('zippin_shipping_status');
 
     if (!$order || !$shipment_creation_trigger_status) return false;
@@ -104,7 +105,8 @@ function add_order_side_box()
         return false;
     }
 
-    $chosen_shipping_method = reset($order->get_shipping_methods());
+    $order_shipping_methods = $order->get_shipping_methods();
+    $chosen_shipping_method = reset($order_shipping_methods);
     if (!$chosen_shipping_method) {
         return false;
     }
@@ -161,8 +163,8 @@ function box_content()
 
 function add_action_button($actions, $order)
 {
-
-    $chosen_shipping_method = reset($order->get_shipping_methods());
+    $order_shipping_methods = $order->get_shipping_methods();
+    $chosen_shipping_method = reset($order_shipping_methods);
     if (!$chosen_shipping_method) {
         return $actions;
     }
@@ -222,14 +224,14 @@ function create_shortcode()
 {
     $content = '';
 
-    if (isset($_GET['zippin_tracking_order_id'],$_GET['zippin_tracking_order_email'])) {
+    if (isset($_REQUEST['zippin_tracking_order_id'],$_REQUEST['zippin_tracking_order_email'])) {
 
-        $order = wc_get_order(filter_var($_GET['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT));
+        $order = wc_get_order(filter_var($_REQUEST['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT));
 
         if (!$order) {
             echo '<p class="zippin-tracking-result-error">No se encontró una orden con los datos ingresados.</p>';
 
-        } elseif ($order->get_billing_email() != sanitize_email($_GET['zippin_tracking_order_email'])) {
+        } elseif ($order->get_billing_email() != sanitize_email($_REQUEST['zippin_tracking_order_email'])) {
             echo '<p class="zippin-tracking-result-error">No se encontró una orden con los datos ingresados.</p>';
 
         } elseif(!$order->get_meta('zippin_shipment', true)) {
@@ -253,9 +255,9 @@ function create_shortcode()
 
     }
 
-    $content .= '<form method="get" class="zippin-tracking-form">
-		<input type="text" value="'.filter_var($_GET['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT).'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
-		<input type="email" value="'.sanitize_email($_GET['zippin_tracking_order_email']).'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
+    $content .= '<form method="post" class="zippin-tracking-form" action="'.get_permalink().'">
+		<input type="text" value="'.filter_var($_REQUEST['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT).'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
+		<input type="email" value="'.sanitize_email($_REQUEST['zippin_tracking_order_email']).'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
 		<br />
 		<input type="submit" value="Consultar estado" id="update_button" class="zippin-tracking-form-submit update_button" style="cursor: pointer;"/>
 		</form>';
