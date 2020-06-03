@@ -155,6 +155,7 @@ class ZippinConnector
 
         if ($response = $this->call_api('POST', '/shipments/quote', $payload)) {
             $response = json_decode($response['body'], true);
+            $this->logger->info('Quote Log - body: '.wc_print_r(json_encode($payload), true).' - response: '.wc_print_r(json_encode($response), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
 
             $quote_results = array();
             $service_type_counter = [];
