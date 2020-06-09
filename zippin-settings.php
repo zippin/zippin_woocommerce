@@ -60,6 +60,7 @@ function init_settings()
         'zippin_main_section'
     );
 
+    /*
     add_settings_field(
         'packaging_mode',
         'Agrupación en paquetes',
@@ -67,6 +68,7 @@ function init_settings()
         'zippin_settings',
         'zippin_main_section'
     );
+    */
 
     add_settings_field(
         'options_mix',
@@ -87,7 +89,7 @@ function init_settings()
 
     add_settings_field(
         'enable_free_shipping_creation',
-        'Crear Envíos Gratis con Zippin',
+        'Crear envíos gratuitos con Zippin',
         __NAMESPACE__ . '\print_free_shipping_creation',
         'zippin_settings',
         'zippin_main_section'
@@ -95,7 +97,7 @@ function init_settings()
 
     add_settings_field(
         'free_shipping_threshold',
-        'Ofrecer envío gratis segun valor de orden',
+        'Ofrecer envío gratis según valor de orden',
         __NAMESPACE__ . '\print_free_shipping_threshold',
         'zippin_settings',
         'zippin_main_section'
@@ -103,7 +105,7 @@ function init_settings()
 
 	add_settings_field(
         'additional_charge',
-        'Cargo Adicional',
+        'Cargo adicional',
         __NAMESPACE__ . '\print_additional_charge',
         'zippin_settings',
         'zippin_main_section'
@@ -203,7 +205,7 @@ function print_free_shipping_creation()
     $previous_config = get_option('zippin_create_free_shipments');
     echo '<p><label><input type="radio" name="enable_free_shipping_creation" value="yes"'.($previous_config=='yes' ? ' checked':'').'> Si</label> ';
     echo '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="enable_free_shipping_creation" value="no"'.($previous_config=='no' || empty($previous_config) ? ' checked':'').'> No</label></p>';
-    echo '<p class="info-text">Si habilitas esta opción, tambien se crearán en Zippin los envíos con Envío gratis. La selección del transporte será automática según la configuración de tu cuenta. <br>
+    echo '<p class="info-text">Si habilitas esta opción, los envíos con Envío gratis se crearán en Zippin. La selección del transporte será automática según la configuración de tu cuenta. <br>
 <small>Aprende <a href="https://docs.woocommerce.com/document/free-shipping/" target="_blank">cómo configurar envío gratis en Woocomerce</a> y configura en Zippin <a target="_blank" href="https://app.zippin.com.ar/myaccount/account/settings">tus opciones de selección de transporte (solapa Opciones)</a>.</small>
 </p>';
 }

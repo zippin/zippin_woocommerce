@@ -13,7 +13,7 @@ class ZippinConnector
 {
     private $api_key, $api_secret, $account_id, $origin_id, $logger;
 
-    const VERSION = 'official_1_3';
+    const VERSION = 'official_1_4';
 
     public function __construct()
     {
@@ -72,7 +72,8 @@ class ZippinConnector
             'external_id' => 'W'.$order->get_id(),
             'source' => 'woocommerce_'.self::VERSION,   // Por favor dejar para poder dar mejor soporte.
             'declared_value' => round(floatval($order->get_total()),2),
-            'packages' => $products['packages'],
+            //'packages' => $products['packages'],
+            'items' => $products['items'],
             'destination' => $destination
         );
 
@@ -142,16 +143,20 @@ class ZippinConnector
         }
     }
 
-    public function quote($destination, $packages, $declared_value = 0, $service_types = null, $mix = null)
+    public function quote($destination, $packages = [], $items = [], $declared_value = 0, $service_types = null, $mix = null)
     {
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
             'declared_value' => round(floatval($declared_value),2),
-            'packages' => $packages,
             'destination' => $destination
         );
 
+        if (count($items)) {
+            $payload['items'] = $items;
+        } else {
+            $payload['packages'] = $packages;
+        }
 
         if ($response = $this->call_api('POST', '/shipments/quote', $payload)) {
             $response = json_decode($response['body'], true);

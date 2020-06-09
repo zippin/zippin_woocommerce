@@ -3,7 +3,7 @@
 Plugin Name: Envíos con Zippin para Woocommerce
 Plugin URI: https://bitbucket.org/zippin/zippin_woocommerce
 Description: Integra WooCommerce con Zippin para realizar envíos a todo el país.
-Version: 1.3
+Version: 1.4
 Author: Zippin
 Author URI: https://www.zippin.com.ar/
 Requires PHP: 7

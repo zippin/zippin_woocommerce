@@ -90,7 +90,7 @@ function zippin_init()
 
                 // Quote and get results
                 $connector = new ZippinConnector;
-                $quote_results = $connector->quote($destination, $products['packages'], $declared_value, $this->get_instance_option('service_types'), $mix);
+                $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix);
 
                 if (get_option('zippin_additional_charge'))	$additional_charge = get_option('zippin_additional_charge'); else $additional_charge = '0';
 

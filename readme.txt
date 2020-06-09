@@ -5,7 +5,7 @@ Tags: envios, zippin, argentina, shipping, woocommerce
 Requires at least: 4.6
 Tested up to: 5.2.1
 Requires PHP: 5.6
-Stable tag: 1.3
+Stable tag: 1.4
 Language: Spanish
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -56,6 +56,9 @@ Por el momento solo podrás hacer envíos en Argentina.
 
 
 == Changelog ==
+
+= 1.4 =
+Change grouping mode to use new api functionality
 
 = 1.3 =
 Add free shipping threshold
