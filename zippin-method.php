@@ -15,6 +15,8 @@ function zippin_init()
         class WC_Zippin extends WC_Shipping_Method
         {
 
+            private $logger;
+
             public function __construct($instance_id = 0)
             {
                 $this->id = 'zippin';
@@ -63,22 +65,28 @@ function zippin_init()
                 $products = $this->get_products_from_cart();
 
                 // Create destination object
-                $destination = array();
-                $destination['zipcode'] = WC()->customer->get_shipping_postcode();
-                if (empty($destination['zipcode'])) {
-                    $destination['zipcode'] = WC()->customer->get_billing_postcode();
-                }
-                $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
-                $destination['state'] = WC()->customer->get_shipping_state();
-                if (empty($destination['state'])) {
-                    $destination['state'] = WC()->customer->get_billing_state();
-                }
-                $destination['state'] = $helper->get_province_name($destination['state']);
+                $billing_address = [
+                    'city' => WC()->customer->get_billing_city(),
+                    'state' => WC()->customer->get_billing_state(),
+                    'zipcode' => WC()->customer->get_billing_postcode()
+                ];
 
-                $destination['city'] = WC()->customer->get_shipping_city();
-                if (empty($destination['city'])) {
-                    $destination['city'] = WC()->customer->get_billing_city();
+                $shipping_address = [
+                    'city' => WC()->customer->get_shipping_city(),
+                    'state' => WC()->customer->get_shipping_state(),
+                    'zipcode' => WC()->customer->get_shipping_postcode()
+                ];
+
+                //$this->logger->info('Quote Log - billing: '.wc_print_r(json_encode($billing_address), true).' - shipping: '.wc_print_r(json_encode($shipping_address), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+
+                if (!empty($shipping_address['city']) && !empty($shipping_address['state']) && !empty($shipping_address['zipcode'])) {
+                    $destination = $shipping_address;
+                } else {
+                    $destination = $billing_address;
                 }
+
+                $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
+                $destination['state'] = $helper->get_province_name($destination['state']);
 
                 // Get declared value
                 $declared_value = WC()->cart->get_subtotal();
@@ -86,13 +94,16 @@ function zippin_init()
                     $declared_value = number_format($declared_value, 2, '.', '');
                 }
 
-                $mix = get_option('zippin_options_mix');
-
                 // Quote and get results
+                $mix = get_option('zippin_options_mix');
                 $connector = new ZippinConnector;
                 $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix);
 
-                if (get_option('zippin_additional_charge'))	$additional_charge = get_option('zippin_additional_charge'); else $additional_charge = '0';
+                if (get_option('zippin_additional_charge'))	{
+                    $additional_charge = get_option('zippin_additional_charge');
+                } else {
+                    $additional_charge = '0';
+                }
 
                 $use_free_shipping = false;
                 if (get_option('zippin_free_shipping_threshold')) {
@@ -105,11 +116,11 @@ function zippin_init()
                     foreach ($quote_results as $result) {
 
                         if ($result['shipping_time'] > 48) {
-                            $time = ' (hasta '. ($result['shipping_time']/24).' días háb.)';
-                        } elseif($result['shipping_time'] <= 24) {
-                            $time = '(llega el día del despacho)';
-                        }else {
-                            $time = ' (hasta '. ($result['shipping_time']).' hs.)';
+                            $time = '(hasta '. ($result['shipping_time']/24).' días háb. desde el despacho)';
+                        } elseif ($result['shipping_time'] == 24) {
+                            $time = '(al día siguiente del despacho)';
+                        } else {
+                            $time = '(el día del despacho)';
                         }
 
                         if ($use_free_shipping) {
