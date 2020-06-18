@@ -13,7 +13,7 @@ class ZippinConnector
 {
     private $api_key, $api_secret, $account_id, $origin_id, $logger;
 
-    const VERSION = 'official_1_3';
+    const VERSION = 'official_1_4';
 
     public function __construct()
     {
@@ -70,9 +70,10 @@ class ZippinConnector
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
             'external_id' => 'W'.$order->get_id(),
-            'source' => 'woocommerce_'.self::VERSION,   // Por favor dejar para poder dar mejor soporte.
+            'source' => 'wc_'.self::VERSION,   // Por favor dejar para poder dar mejor soporte.
             'declared_value' => round(floatval($order->get_total()),2),
-            'packages' => $products['packages'],
+            //'packages' => $products['packages'],
+            'items' => $products['items'],
             'destination' => $destination
         );
 
@@ -142,16 +143,20 @@ class ZippinConnector
         }
     }
 
-    public function quote($destination, $packages, $declared_value = 0, $service_types = null, $mix = null)
+    public function quote($destination, $packages = [], $items = [], $declared_value = 0, $service_types = null, $mix = null)
     {
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
             'declared_value' => round(floatval($declared_value),2),
-            'packages' => $packages,
             'destination' => $destination
         );
 
+        if (count($items)) {
+            $payload['items'] = $items;
+        } else {
+            $payload['packages'] = $packages;
+        }
 
         if ($response = $this->call_api('POST', '/shipments/quote', $payload)) {
             $response = json_decode($response['body'], true);
@@ -176,10 +181,15 @@ class ZippinConnector
                 }
 
                 $quote_result = array();
-                $quote_result['service_name'] = $result['carrier']['name'].' - '.$result['service_type']['name'];
+                if ($result['service_type']['code'] == 'pickup_point') {
+                    $quote_result['service_name'] = 'Retiro en sucursal '.$result['carrier']['name'];
+                } else {
+                    $quote_result['service_name'] = 'Entrega '.$result['carrier']['name']. ' a domicilio';
+                }
                 $quote_result['shipping_time'] = $result['delivery_time']['max']*24;
                 $quote_result['price'] = $result['amounts']['price_incl_tax'];
-                $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
+                $quote_result['code'] = $result['carrier']['ixd'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
+                $quote_result['result'] = $result;
                 $quote_results[] = $quote_result;
 
                 if (!isset($service_type_counter[$result['service_type']['code']])) {

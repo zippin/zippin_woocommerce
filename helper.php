@@ -283,19 +283,29 @@ class Helper
     {
         $products['shipping_info']['total_weight'] = 0;
         $products['shipping_info']['total_volume'] = 0;
+        $products['items'] = array();
         $products['packages'] = array();
+
         $skus = array();
 
         foreach ($products['products'] as $index => $product) {
             // $product is https://docs.woocommerce.com/wc-apidocs/class-WC_Product.html
             $sku = $product['sku'];
             if (empty($sku)) {
-                $sku = 'id'.$product['id'];
+                $sku = 'wc'.$product['id'];
             }
 
             $products['shipping_info']['total_weight'] += $product['weight'];
             $products['shipping_info']['total_volume'] += $product['height'] * $product['width'] * $product['length'];
             $skus[] = $sku;
+
+            $products['items'][] = array(
+                'weight' => intval(ceil($product['weight'])),
+                'height' => intval(ceil($product['height'])),
+                'width' => intval(ceil($product['width'])),
+                'length' => intval(ceil($product['length'])),
+                'sku' => substr($sku,0,60),
+            );
 
             // One package per unit of product sold
             if (get_option('zippin_packaging_mode') != 'grouped') {
