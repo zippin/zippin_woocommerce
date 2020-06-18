@@ -3,7 +3,7 @@ Contributors: zippindevelopers
 Donate link: https://www.zippin.com.ar/
 Tags: envios, zippin, argentina, shipping, woocommerce
 Requires at least: 4.6
-Tested up to: 5.2.1
+Tested up to: 5.4.2
 Requires PHP: 5.6
 Stable tag: 1.4
 Language: Spanish

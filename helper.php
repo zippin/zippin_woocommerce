@@ -292,7 +292,7 @@ class Helper
             // $product is https://docs.woocommerce.com/wc-apidocs/class-WC_Product.html
             $sku = $product['sku'];
             if (empty($sku)) {
-                $sku = 'id'.$product['id'];
+                $sku = 'wc'.$product['id'];
             }
 
             $products['shipping_info']['total_weight'] += $product['weight'];
