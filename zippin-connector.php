@@ -188,7 +188,7 @@ class ZippinConnector
                 }
                 $quote_result['shipping_time'] = $result['delivery_time']['max']*24;
                 $quote_result['price'] = $result['amounts']['price_incl_tax'];
-                $quote_result['code'] = $result['carrier']['ixd'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
+                $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
                 $quote_result['result'] = $result;
                 $quote_results[] = $quote_result;
 
