@@ -13,7 +13,7 @@ class ZippinConnector
 {
     private $api_key, $api_secret, $account_id, $origin_id, $logger;
 
-    const VERSION = 'official_1_4';
+    const VERSION = 'official_1_5';
 
     public function __construct()
     {
