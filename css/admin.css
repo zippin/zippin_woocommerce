@@ -1,4 +1,5 @@
 .success-text{width:340px;background-color: #8bc34a2e;padding:10px;}
 .info-text{width:340px;background-color: #03a9f41f;padding:10px;}
 .danger-text{width:340px;background-color: #f443361a;padding:10px;}
+.warning-text{width:340px;background-color: #f4a8361a;padding:10px;}
 tr input, tr select{width: 360px;}

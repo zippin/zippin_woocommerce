@@ -36,10 +36,14 @@ function update_order_meta($order_id)
             if (isset($chosen_shipping_method[3])) {
                 $data['logistic_type'] = $chosen_shipping_method[3];
             }
+            if (isset($chosen_shipping_method[4])) {
+                $data['point_id'] = $chosen_shipping_method[4];
+            }
         } else {
             $data['carrier_id'] = null;
             $data['service_type'] = null;
             $data['logistic_type'] = null;
+            $data['point_id'] = null;
         }
 
         $order->update_meta_data('zippin_shipping_info', serialize($data));
@@ -62,11 +66,11 @@ function process_order_status($order_id, $old_status, $new_status)
 {
     $order = wc_get_order($order_id);
     $order_shipping_methods = $order->get_items('shipping');
-    $order_shipping_method = reset($order_shipping_methods)->get_method_id();
+    $order_shipping_method = reset($order_shipping_methods);
     $shipment_creation_trigger_status = get_option('zippin_shipping_status');
 
-    if (!$order || !$shipment_creation_trigger_status) return false;
-    if (!in_array($order_shipping_method, ['zippin','free_shipping'])) return false;
+    if (!$order || !$shipment_creation_trigger_status || !$order_shipping_method) return false;
+    if (!in_array($order_shipping_method->get_method_id(), ['zippin','free_shipping'])) return false;
 
     if ($order->get_meta('zippin_shipment', true)) {
         // Ya hay un envío creado
@@ -78,18 +82,18 @@ function process_order_status($order_id, $old_status, $new_status)
     } else {
         // NO hay un envío creado
         if ($order->get_meta('zippin_shipping_info', true) && in_array($shipment_creation_trigger_status, ['wc-'.$new_status, $new_status])) {
-            wc_get_logger()->info('Creating shipment in zippin...');
+            wc_get_logger()->info('Creating shipment for order '.$order->get_id(), unserialize(ZIPPIN_LOGGER_CONTEXT));
 
             $connector = new ZippinConnector;
             $shipment = $connector->create_shipment($order);
-
+            wc_get_logger()->info('ship '.print_r($shipment, true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             if ($shipment) {
                 // Shipment creado
                 $order->update_meta_data('zippin_shipment', serialize($shipment));
                 $order->add_order_note('Se creó el envío en Zippin (ID: '.$shipment['id'].')');
                 $order->save();
             } else {
-                wc_get_logger()->info('Shipment not created');
+                wc_get_logger()->warning('Failed shipment creation for order '.$order->get_id().$connector->getLastError(), unserialize(ZIPPIN_LOGGER_CONTEXT));
             }
         }
 
@@ -190,34 +194,60 @@ function add_button_css_file($hook)
     wp_enqueue_style('action-button.css', plugin_dir_url(__FILE__) . 'css/action-button.css', array(), 1.0);
 }
 
-function create_page()
+function activate_plugin()
 {
     global $wp_version;
 
-    if (version_compare(PHP_VERSION, '5.6', '<')) {
+    if (version_compare(PHP_VERSION, '7.0', '<')) {
         $flag = 'PHP';
-        $version = '5.6';
+        $version = '7.0';
+
     } else if (version_compare($wp_version, '4.9', '<')) {
         $flag = 'WordPress';
         $version = '4.9';
-    } else {
 
-        if (defined('ZIPPIN_APIKEY') && defined('ZIPPIN_SECRETKEY') && !empty('ZIPPIN_APIKEY') && !empty('ZIPPIN_SECRETKEY')) {
+    } else {
+        if (defined('ZIPPIN_APIKEY') && defined('ZIPPIN_SECRETKEY') && !empty('ZIPPIN_APIKEY') && !empty('ZIPPIN_SECRETKEY') && empty(get_option('zippin_api_key')) && empty(get_option('zippin_api_secret'))) {
             update_option('zippin_api_key', ZIPPIN_APIKEY);
             update_option('zippin_api_secret', ZIPPIN_SECRETKEY);
         }
+
+        if (!empty(get_option('zippin_api_key')) && !empty(get_option('zippin_api_secret'))) {
+            update_option('zippin_credentials_check', true);
+        }
+
+        $delivery_zones = \WC_Shipping_Zones::get_zones();
+
+        foreach ($delivery_zones as $zone_id => $zone_data ) {
+            if ($zone_data['zone_name'] == 'Argentina' ) {
+                // Adding zippin to the first available zone
+                $zone = \WC_Shipping_Zones::get_zone($zone_id);
+                $methods = $zone->get_shipping_methods();
+                foreach ($methods as $method) {
+                    if ($method->id == 'zippin') {
+                        return;
+                    }
+                }
+                $zone->add_shipping_method('zippin');
+                $zone->save();
+                return;
+            }
+        }
+
+        // Create a new zone
         $zone = new \WC_Shipping_Zone();
         if ($zone) {
             $zone->set_zone_name('Argentina');
-            $helper = new Helper();
-            $zone->set_locations($helper->get_zones_names_for_shipping_zone());
+            $zone->set_locations(Helper::get_shipping_zone_regions());
             $zone->add_shipping_method('zippin');
             $zone->save();
         }
         return;
     }
+
     deactivate_plugins(basename(__FILE__));
     wp_die('<p><strong>Zippin</strong> Requiere al menos ' . $flag . ' version ' . $version . ' o mayor.</p>', 'Plugin Activation Error', array('response' => 200, 'back_link' => true));
+
 }
 
 function create_shortcode()
@@ -265,10 +295,19 @@ function create_shortcode()
     return $content;
 }
 
-function create_settings_link($links)
+function add_plugin_column_links($links)
 {
-    $links[] = '<a href="' . esc_url(get_admin_url(null, 'options-general.php?page=zippin_settings')) . '">Settings</a>';
+    $links[] = '<a href="' . esc_url(get_admin_url(null, 'options-general.php?page=zippin_settings')) . '">Configurar</a>';
     return $links;
+}
+
+function add_plugin_description_links($meta, $file, $data, $status)
+{
+    if ($data['TextDomain'] == 'zippin_woocommerce') {
+        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.com.ar/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce') . '">Guía de configuración</a>';
+        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.com.ar/problemas-comunes-con-el-plugin-de-woocommerce') . '">Resolver problemas</a>';
+    }
+    return $meta;
 }
 
 function zippin_add_free_shipping_label($label, $method)
@@ -294,7 +333,7 @@ function handle_webhook()
 {
     $raw_post = file_get_contents('php://input');
     $data = json_decode($raw_post, 1);
-    wc_get_logger()->info('Incoming zippin webhook:' . wc_print_r($data, 1));
+    wc_get_logger()->info('Incoming zippin webhook:' . wc_print_r($data, 1), array('source' => 'zippin'));
 
     if ($data['topic'] == 'status' || $data['topic'] == 'shipment') {
         $connector = new ZippinConnector;

@@ -42,10 +42,11 @@ function zippin_init()
                         'title' => __('Tipos de Servicio Habilitados', 'woocommerce'),
                         'description'=>'Selecciona los tipos de servicio que quieras ofrecer. Selecciona múltiples opciones manteniendo la tecla CTRL.',
                         'type' => 'multiselect',
-                        'default' => array('standard_delivery','urgent_delivery'),
+                        'default' => array('standard_delivery','urgent_delivery','pickup_point'),
                         'options' => array(
                             'standard_delivery' => 'Entrega a domicilio estándar',
                             'urgent_delivery' => 'Entrega en el Día',
+                            'pickup_point' => 'Entrega en sucursal',
                         )
                     ),
                 );
@@ -59,7 +60,6 @@ function zippin_init()
 
             public function calculate_shipping($package = array())
             {
-                $helper = new Helper();
 
                 // Prepare packages
                 $products = $this->get_products_from_cart();
@@ -86,7 +86,7 @@ function zippin_init()
                 }
 
                 $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
-                $destination['state'] = $helper->get_province_name($destination['state']);
+                $destination['state'] = Helper::get_state_name($destination['state']);
 
                 // Get declared value
                 $declared_value = WC()->cart->get_subtotal();
@@ -99,29 +99,41 @@ function zippin_init()
                 $connector = new ZippinConnector;
                 $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix);
 
-                if (get_option('zippin_additional_charge'))	{
-                    $additional_charge = get_option('zippin_additional_charge');
-                } else {
-                    $additional_charge = '0';
-                }
-
-                $use_free_shipping = false;
-                if (get_option('zippin_free_shipping_threshold')) {
-                    if (WC()->cart->get_subtotal() >= floatval(get_option('zippin_free_shipping_threshold'))) {
-                        $use_free_shipping = true;
-                    }
-                }
-
                 if ($quote_results) {
+
+                    if (get_option('zippin_additional_charge'))	{
+                        $additional_charge = get_option('zippin_additional_charge');
+                    } else {
+                        $additional_charge = '0';
+                    }
+
+                    $use_free_shipping = false;
+                    if (get_option('zippin_free_shipping_threshold')) {
+                        if (WC()->cart->get_subtotal() >= floatval(get_option('zippin_free_shipping_threshold'))) {
+                            $use_free_shipping = true;
+                        }
+                    }
+
                     foreach ($quote_results as $result) {
 
-                        if ($result['shipping_time'] > 48) {
-                            $time = '(hasta '. ($result['shipping_time']/24).' días háb. desde el despacho)';
-                        } elseif ($result['shipping_time'] == 24) {
-                            $time = '(al día siguiente del despacho)';
+                        if ($result['result']['service_type']['code'] == 'pickup_point') {
+                            if ($result['shipping_time'] > 24) {
+                                $time = '(a partir de '. ($result['shipping_time']/24).' días háb. desde el despacho)';
+                            } elseif ($result['shipping_time'] == 24) {
+                                $time = '(a partir del día siguiente del despacho)';
+                            } else {
+                                $time = '(el día del despacho)'.$result['shipping_time'];
+                            }
                         } else {
-                            $time = '(el día del despacho)';
+                            if ($result['shipping_time'] > 24) {
+                                $time = '(hasta '. ($result['shipping_time']/24).' días háb. desde el despacho)';
+                            } elseif ($result['shipping_time'] == 24) {
+                                $time = '(al día siguiente del despacho)';
+                            } else {
+                                $time = '(el día del despacho)'.$result['shipping_time'];
+                            }
                         }
+
 
                         if ($use_free_shipping) {
                             $cost = 0;
@@ -131,14 +143,36 @@ function zippin_init()
                             $cost = (isset($result['price']) ? $result['price'] : 0);
                         }
 
-                        $rate = array(
-                            'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : ''),
-                            'label' => $result['service_name'] . ' ' . $time,
-                            'cost' => $cost,
-                            'calc_tax' => 'per_order'
-                        );
+                        if ($result['result']['service_type']['code'] == 'pickup_point') {
+                            $i=1;
+                            foreach ($result['result']['pickup_points'] as $point) {
+                                if ($i>3) { continue; }
+                                //echo wc_print_r($result['result'],1);
+                                $address = $point['location']['street'].' '.$point['location']['street_number'].', '.$point['location']['city'];
+                                $rate = array(
+                                    'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : '').'|'.$point['point_id'],
+                                    'label' => $result['service_name'] . ' - '. $point['description'] . ' - '. $address.' ' . $time,
+                                    'cost' => $cost,
+                                    'calc_tax' => 'per_order'
+                                );
 
-                        $this->add_rate($rate);
+                                $this->add_rate($rate);
+                                $i++;
+                            }
+
+                        } else {
+                            $rate = array(
+                                'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : '').'|x',
+                                'label' => $result['service_name'] . ' ' . $time,
+                                'cost' => $cost,
+                                'calc_tax' => 'per_order'
+                            );
+
+                            $this->add_rate($rate);
+                        }
+
+
+
 
                     }
                 }

@@ -45,14 +45,6 @@ function init_settings()
 
 
     add_settings_field(
-        'webhook_instructions',
-        'Notificaciones de Zippin',
-        __NAMESPACE__ . '\print_webhooks_instructions',
-        'zippin_settings',
-        'zippin_main_section'
-    );
-
-    add_settings_field(
         'origin_id',
         'Origen predeterminado para envíos',
         __NAMESPACE__ . '\print_origins',
@@ -81,7 +73,7 @@ function init_settings()
 
     add_settings_field(
         'default_shipping_status',
-        'Estado de pedido',
+        'Estado de pedido para crear en Zippin',
         __NAMESPACE__ . '\print_default_shipping_status',
         'zippin_settings',
         'zippin_main_section'
@@ -89,7 +81,7 @@ function init_settings()
 
     add_settings_field(
         'enable_free_shipping_creation',
-        'Crear envíos gratuitos con Zippin',
+        'Crear los envíos gratuitos con Zippin',
         __NAMESPACE__ . '\print_free_shipping_creation',
         'zippin_settings',
         'zippin_main_section'
@@ -103,7 +95,7 @@ function init_settings()
         'zippin_main_section'
     );
 
-	add_settings_field(
+    add_settings_field(
         'additional_charge',
         'Cargo adicional',
         __NAMESPACE__ . '\print_additional_charge',
@@ -112,12 +104,22 @@ function init_settings()
     );
 
     add_settings_field(
+        'webhook_instructions',
+        'Sincronización entre Zippin y WooCommerce',
+        __NAMESPACE__ . '\print_webhooks_instructions',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
+    add_settings_field(
         'extra_info',
-        'Información adicional',
+        'Integrar tracking',
         __NAMESPACE__ . '\print_extra_info',
         'zippin_settings',
         'zippin_main_section'
     );
+
+
 }
 
 
@@ -148,10 +150,10 @@ function print_account_id()
         $connector = new ZippinConnector;
         $account = $connector->get_account();
         if ($account) {
-            echo '<p class="info-text">Cuenta: <b>'.$account['name'].'</b></p>';
+            echo '<p class="success-text">Cuenta: <b>'.$account['name'].'</b></p>';
         } else {
-            echo '<p class="danger-text">Cuenta: <b>SIN AUTORIZACION</b><br>
-                Verifica que las credenciales son válidas y corresponden a la cuenta indicada.</p>';
+            echo '<p class="danger-text">Cuenta: <b>SIN AUTORIZACIÓN</b><br>
+                Verifica que las credenciales sean válidas y correspondan a la cuenta indicada.</p>';
         }
     }
 
@@ -159,7 +161,7 @@ function print_account_id()
 
 function print_webhooks_instructions()
 {
-    echo '<p class="info-text">Ingresa a <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a> y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
+    echo '<p class="warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a> y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
     echo '<br>Configura tu webhook de la siguiente manera: <br>topic: <b>shipment</b> <br>URL: <strong>' . get_site_url(null, '?wc-api=zippin') . '</strong></p>';
 }
 
@@ -212,7 +214,7 @@ function print_free_shipping_creation()
 
 function print_additional_charge(){
 	$previous_config = get_option('zippin_additional_charge');
-    echo '<input type="number" required name="additional_charge" value="' . ($previous_config ? $previous_config : '') . '" />
+    echo '<input type="number" required name="additional_charge" value="' . ($previous_config ? $previous_config : 0) . '" />
 	<p class="info-text">El valor numérico ingresado se expresara como porcentaje. Ej: 20%. Dejar en cero para desactivar opción.</p>';
 }
 
@@ -228,7 +230,7 @@ function print_origins()
     if (get_option('zippin_api_key') && get_option('zippin_api_secret') && get_option('zippin_account_id')) {
         $connector = new ZippinConnector;
         $addresses = $connector->get_origins();
-        if (count($addresses)>0) {
+        if ($addresses) {
             echo '<select name="origin_id" required>';
         } else {
             echo '<select name="origin_id">';
@@ -253,7 +255,7 @@ function print_origins()
         }
         echo '</select>';
     } else {
-        echo '<p class="info-text">Luego de guardar tus credenciales te mostraremos aquí los orígenes disponibles y podrás seleccionar uno.</p>';
+        echo '<p class="warning-text">Luego de guardar tus credenciales te mostraremos aquí los orígenes disponibles y podrás seleccionar uno.</p>';
     }
 
 }
@@ -261,7 +263,7 @@ function print_origins()
 
 function print_extra_info()
 {
-    echo '<p class="info-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</p>';
+    echo '<p class="warning-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</p>';
 }
 
 function create_menu_option()
@@ -301,6 +303,17 @@ function settings_page_content()
             delete_option('zippin_origin_id');
         }
         update_option('zippin_account_id', filter_var($_POST['account_id'],FILTER_SANITIZE_NUMBER_INT));
+    }
+
+
+    if (isset($_POST['api_key']) && isset($_POST['api_secret']) && isset($_POST['account_id'])) {
+        $connector = new ZippinConnector;
+        $account = $connector->get_account();
+        if ($account) {
+            update_option('zippin_credentials_check',true);
+        } else {
+            update_option('zippin_credentials_check',false);
+        }
     }
 
     // Save origin id
@@ -351,7 +364,7 @@ function settings_page_content()
 		<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 		<form action="options-general.php?page=zippin_settings" method="post">
         <?php
-        wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), 1.0);
+        wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), 1.1);
         wp_nonce_field('zippin_settings_save','zippin_wpnonce',false,true);
         settings_fields('zippin_settings');
         do_settings_sections('zippin_settings');
