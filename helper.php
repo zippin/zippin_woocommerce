@@ -38,195 +38,71 @@ class Helper
         );
     }
 
-    public function get_state_center($province_id = '')
+
+    public static function get_state_name($state_id = '')
     {
-        if (!$province_id) {
-            return false;
+        $states = [
+            'C' => 'Capital Federal',
+            'B' => 'Buenos Aires',
+            'K' => 'Catamarca',
+            'H' => 'Chaco',
+            'U' => 'Chubut',
+            'X' => 'Cordoba',
+            'W' => 'Corrientes',
+            'E' => 'Entre Rios',
+            'P' => 'Formosa',
+            'Y' => 'Jujuy',
+            'L' => 'La Pampa',
+            'F' => 'La Rioja',
+            'M' => 'Mendoza',
+            'N' => 'Misiones',
+            'Q' => 'Neuquen',
+            'R' => 'Rio Negro',
+            'A' => 'Salta',
+            'J' => 'San Juan',
+            'D' => 'San Luis',
+            'Z' => 'Santa Cruz',
+            'S' => 'Santa Fe',
+            'G' => 'Santiago del Estero',
+            'V' => 'Tierra del Fuego',
+            'T' => 'Tucuman',
+        ];
+
+        if (isset($states[$state_id])) {
+            return $states[$state_id];
         }
-        switch ($province_id) {
-            case 'A':
-                $coords = array(-24.7959127, -65.5006682);
-                break;
-            case 'B':
-            case 'C':
-            default:
-                $coords = array(-34.699918, -58.5811109);
-                break;
-            case 'D':
-                $coords = array(-33.2975802, -66.344685);
-                break;
-            case 'E':
-                $coords = array(-32.1156458, -60.0319688);
-                break;
-            case 'F':
-                $coords = array(-29.8396499, -68.273314);
-                break;
-            case 'G':
-                $coords = array(-28.0532798, -64.5710443);
-                break;
-            case 'H':
-                $coords = array(-26.1878152, -61.6924568);
-                break;
-            case 'J':
-                $coords = array(-31.5462472, -68.5566567);
-                break;
-            case 'K':
-                $coords = array(-27.7553095, -67.8238272);
-                break;
-            case 'L':
-                $coords = array(-37.0395855, -66.2405196);
-                break;
-            case 'M':
-                $coords = array(-32.88337, -68.875342);
-                break;
-            case 'N':
-                $coords = array(-26.8225555, -55.9700858);
-                break;
-            case 'P':
-                $coords = array(-24.657959, -61.0295816);
-                break;
-            case 'Q':
-                $coords = array(-38.9560437, -68.1185493);
-                break;
-            case 'R':
-                $coords = array(-40.0178043, -68.8075603);
-                break;
-            case 'S':
-                $coords = array(-31.6134016, -60.7152858);
-                break;
-            case 'T':
-                $coords = array(-27.0278799, -65.7376345);
-                break;
-            case 'U':
-                $coords = array(-43.9710412, -70.0556373);
-                break;
-            case 'V':
-                $coords = array(-54.0550412, -68.0063843);
-                break;
-            case 'W':
-                $coords = array(-27.4878462, -58.8234578);
-                break;
-            case 'X':
-                $coords = array(-31.4010127, -64.2492772);
-                break;
-            case 'Y':
-                $coords = array(-23.3030358, -66.6469644);
-                break;
-            case 'Z':
-                $coords = array(-49.4267631, -71.4255266);
-                break;
-        }
-        return $coords;
+        
+        return null;
     }
 
-    public function get_province_name($province_id = '')
+    public static function get_shipping_zone_regions()
     {
-        switch ($province_id) {
-            case 'C':
-                $zone = 'Capital Federal';
-                break;
-            case 'B':
-            default:
-                $zone = 'Buenos Aires';
-                break;
-            case 'K':
-                $zone = 'Catamarca';
-                break;
-            case 'H':
-                $zone = 'Chaco';
-                break;
-            case 'U':
-                $zone = 'Chubut';
-                break;
-            case 'X':
-                $zone = 'Cordoba';
-                break;
-            case 'W':
-                $zone = 'Corrientes';
-                break;
-            case 'E':
-                $zone = 'Entre Rios';
-                break;
-            case 'P':
-                $zone = 'Formosa';
-                break;
-            case 'Y':
-                $zone = 'Jujuy';
-                break;
-            case 'L':
-                $zone = 'La Pampa';
-                break;
-            case 'F':
-                $zone = 'La Rioja';
-                break;
-            case 'M':
-                $zone = 'Mendoza';
-                break;
-            case 'N':
-                $zone = 'Misiones';
-                break;
-            case 'Q':
-                $zone = 'Neuquen';
-                break;
-            case 'R':
-                $zone = 'Rio Negro';
-                break;
-            case 'A':
-                $zone = 'Salta';
-                break;
-            case 'J':
-                $zone = 'San Juan';
-                break;
-            case 'D':
-                $zone = 'San Luis';
-                break;
-            case 'Z':
-                $zone = 'Santa Cruz';
-                break;
-            case 'S':
-                $zone = 'Santa Fe';
-                break;
-            case 'G':
-                $zone = 'Santiago del Estero';
-                break;
-            case 'V':
-                $zone = 'Tierra del Fuego';
-                break;
-            case 'T':
-                $zone = 'Tucuman';
-                break;
-        }
-        return $zone;
-    }
-
-    public function get_zones_names_for_shipping_zone()
-    {
-        $zones = array();
-        $zones[] = array('code' => 'AR:C', 'type' => 'state');
-        $zones[] = array('code' => 'AR:B', 'type' => 'state');
-        $zones[] = array('code' => 'AR:K', 'type' => 'state');
-        $zones[] = array('code' => 'AR:H', 'type' => 'state');
-        $zones[] = array('code' => 'AR:U', 'type' => 'state');
-        $zones[] = array('code' => 'AR:X', 'type' => 'state');
-        $zones[] = array('code' => 'AR:W', 'type' => 'state');
-        $zones[] = array('code' => 'AR:E', 'type' => 'state');
-        $zones[] = array('code' => 'AR:P', 'type' => 'state');
-        $zones[] = array('code' => 'AR:Y', 'type' => 'state');
-        $zones[] = array('code' => 'AR:L', 'type' => 'state');
-        $zones[] = array('code' => 'AR:F', 'type' => 'state');
-        $zones[] = array('code' => 'AR:M', 'type' => 'state');
-        $zones[] = array('code' => 'AR:N', 'type' => 'state');
-        $zones[] = array('code' => 'AR:Q', 'type' => 'state');
-        $zones[] = array('code' => 'AR:R', 'type' => 'state');
-        $zones[] = array('code' => 'AR:A', 'type' => 'state');
-        $zones[] = array('code' => 'AR:J', 'type' => 'state');
-        $zones[] = array('code' => 'AR:D', 'type' => 'state');
-        $zones[] = array('code' => 'AR:Z', 'type' => 'state');
-        $zones[] = array('code' => 'AR:S', 'type' => 'state');
-        $zones[] = array('code' => 'AR:G', 'type' => 'state');
-        $zones[] = array('code' => 'AR:V', 'type' => 'state');
-        $zones[] = array('code' => 'AR:T', 'type' => 'state');
-        return $zones;
+        $regions = array();
+        $regions[] = array('code' => 'AR:C', 'type' => 'state');
+        $regions[] = array('code' => 'AR:B', 'type' => 'state');
+        $regions[] = array('code' => 'AR:K', 'type' => 'state');
+        $regions[] = array('code' => 'AR:H', 'type' => 'state');
+        $regions[] = array('code' => 'AR:U', 'type' => 'state');
+        $regions[] = array('code' => 'AR:X', 'type' => 'state');
+        $regions[] = array('code' => 'AR:W', 'type' => 'state');
+        $regions[] = array('code' => 'AR:E', 'type' => 'state');
+        $regions[] = array('code' => 'AR:P', 'type' => 'state');
+        $regions[] = array('code' => 'AR:Y', 'type' => 'state');
+        $regions[] = array('code' => 'AR:L', 'type' => 'state');
+        $regions[] = array('code' => 'AR:F', 'type' => 'state');
+        $regions[] = array('code' => 'AR:M', 'type' => 'state');
+        $regions[] = array('code' => 'AR:N', 'type' => 'state');
+        $regions[] = array('code' => 'AR:Q', 'type' => 'state');
+        $regions[] = array('code' => 'AR:R', 'type' => 'state');
+        $regions[] = array('code' => 'AR:A', 'type' => 'state');
+        $regions[] = array('code' => 'AR:J', 'type' => 'state');
+        $regions[] = array('code' => 'AR:D', 'type' => 'state');
+        $regions[] = array('code' => 'AR:Z', 'type' => 'state');
+        $regions[] = array('code' => 'AR:S', 'type' => 'state');
+        $regions[] = array('code' => 'AR:G', 'type' => 'state');
+        $regions[] = array('code' => 'AR:V', 'type' => 'state');
+        $regions[] = array('code' => 'AR:T', 'type' => 'state');
+        return $regions;
     }
 
     public function get_street()
@@ -468,11 +344,12 @@ class Helper
                 'street_number' => $address['number'],
                 'street_extras' => $address['floor'].' '.$address['apartment'],
                 'city' => $order->get_shipping_city(),
-                'state' => $this->get_province_name($order->get_shipping_state()),
+                'state' => Helper::get_state_name($order->get_shipping_state()),
                 'zipcode' => $order->get_shipping_postcode(),
                 'phone' => $order->get_billing_phone(),
                 'email' => $order->get_billing_email(),
             );
+
         } else {
             $destination = array(
                 'name' => $order->get_billing_first_name().' '.$order->get_billing_last_name(),
@@ -481,7 +358,7 @@ class Helper
                 'street_number' => $address['number'],
                 'street_extras' => $address['floor'].' '.$address['apartment'],
                 'city' => $order->get_billing_city(),
-                'state' => $this->get_province_name($order->get_billing_state()),
+                'state' => Helper::get_state_name($order->get_billing_state()),
                 'zipcode' => $order->get_billing_postcode(),
                 'phone' => $order->get_billing_phone(),
                 'email' => $order->get_billing_email(),

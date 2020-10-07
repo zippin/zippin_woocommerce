@@ -12,8 +12,10 @@ if (!defined('ABSPATH')) {
 class ZippinConnector
 {
     private $api_key, $api_secret, $account_id, $origin_id, $logger;
+    public $credentials_checked;
+    protected $last_error;
 
-    const VERSION = 'official_1_5';
+    const VERSION = 'official_1_6';
 
     public function __construct()
     {
@@ -23,6 +25,7 @@ class ZippinConnector
         $this->account_id = get_option('zippin_account_id');
         $this->origin_id = get_option('zippin_origin_id');
         $this->logger = wc_get_logger();
+        $this->credentials_checked = get_option('zippin_credentials_check');
 
     }
 
@@ -51,6 +54,14 @@ class ZippinConnector
     public function create_shipment($order = null)
     {
         if (!$order) {
+            $this->last_error = 'Invalid order.';
+            $this->logger->warning('Invalid order', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            return false;
+        }
+
+        if (!$this->credentials_checked) {
+            $this->last_error = 'Invalid credentials.';
+            $this->logger->warning('Invalid credentials', unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 
@@ -77,9 +88,15 @@ class ZippinConnector
             'destination' => $destination
         );
 
+        if (!$payload['items'] || !$payload['destination']) {
+            $this->logger->warning('No items or destination', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            return false;
+        }
+
         if (!is_null($shipment_info['logistic_type'])) {
             $payload['logistic_type'] = $shipment_info['logistic_type'];
-        } elseif (strval($this->origin_id) == '32') {
+
+        } elseif (in_array(strval($this->origin_id), ['32', '2014'])) {
             $payload['logistic_type'] = 'fulfillment';
         }
 
@@ -93,6 +110,12 @@ class ZippinConnector
             $payload['service_type'] = 'standard_delivery';
         }
 
+        if ($payload['service_type'] == 'pickup_point' && isset($shipment_info['point_id'])) {
+            $payload['destination']['point_id'] = $shipment_info['point_id'];
+            unset($payload['destination']['street'], $payload['destination']['street_number'], $payload['destination']['street_extras']);
+            unset($payload['destination']['city'], $payload['destination']['state'], $payload['destination']['zipcode']);
+        }
+
         if ($response = $this->call_api('POST', '/shipments', $payload)) {
             return json_decode($response['body'], true);
         }
@@ -104,6 +127,10 @@ class ZippinConnector
 
     public function get_origins()
     {
+        if (!$this->credentials_checked) {
+            return false;
+        }
+
         if ($response = $this->call_api('GET', '/addresses', array('account_id' => $this->get_account_id()))) {
             $response = json_decode($response['body'], true);
             $new_addresses = array();
@@ -134,7 +161,9 @@ class ZippinConnector
 
     public function get_shipment($shipment_id)
     {
-
+        if (!$this->credentials_checked) {
+            return false;
+        }
         if ($response = $this->call_api('GET', '/shipments/'.$shipment_id)) {
             return json_decode($response['body'], true);
 
@@ -145,6 +174,15 @@ class ZippinConnector
 
     public function quote($destination, $packages = [], $items = [], $declared_value = 0, $service_types = null, $mix = null)
     {
+        if (!$this->credentials_checked) {
+            return false;
+        }
+
+        if (strlen($destination['zipcode'])<4 || strlen($destination['city'])==0 || strlen($destination['state'])<4) {
+            // Evitamos enviar un request que sabemos que va a fallar
+            return false;
+        }
+
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
@@ -154,6 +192,11 @@ class ZippinConnector
 
         if (count($items)) {
             $payload['items'] = $items;
+            if (count($items)>500) {
+                $this->logger->warning('Unable to quote more than 500 items - body: '.wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                return false;
+            }
+
         } else {
             $payload['packages'] = $packages;
         }
@@ -182,7 +225,7 @@ class ZippinConnector
 
                 $quote_result = array();
                 if ($result['service_type']['code'] == 'pickup_point') {
-                    $quote_result['service_name'] = 'Retiro en sucursal '.$result['carrier']['name'];
+                    $quote_result['service_name'] = 'Retiro en '.$result['carrier']['name'];
                 } else {
                     $quote_result['service_name'] = 'Entrega '.$result['carrier']['name']. ' a domicilio';
                 }
@@ -213,6 +256,7 @@ class ZippinConnector
             $headers['Content-Type'] = 'application/json';
             $headers['Accept'] = 'application/json';
             $headers['Authorization'] = 'Basic '.base64_encode($this->get_api_key().':'.$this->get_api_secret());
+            $headers['x-show-pickup-points'] = 'true';
 
             $url = 'https://api.zippin.com.ar/v2' . $endpoint;
             $args = array(
@@ -242,7 +286,11 @@ class ZippinConnector
             }
 
             if ($response['response']['code'] != 200 && $response['response']['code'] != 201) {
+                if ($response['response']['code'] == 403) {
+                    update_option('zippin_credentials_check',false);
+                }
                 // API Request failed
+                $this->last_error = wc_print_r($response['body'], 1);
                 $this->logger->error('Error '.$response['response']['code'].' calling '.$endpoint.' - Response: '.wc_print_r(json_encode($response), true).' with params: '.wc_print_r(json_encode($params), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
 
@@ -252,5 +300,11 @@ class ZippinConnector
             }
 
         }
+    }
+
+
+    public function getLastError()
+    {
+        return $this->last_error;
     }
 }
