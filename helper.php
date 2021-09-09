@@ -220,6 +220,11 @@ class Helper
         if (!$product) {
             return false;
         }
+
+        if (!$product->needs_shipping()) {
+            return null;
+        }
+
         if (empty($product->get_height()) || empty($product->get_length()) || empty($product->get_width()) || !$product->has_weight()) {
             return false;
         }
@@ -247,6 +252,10 @@ class Helper
         foreach ($items as $item) {
             $product_id = $item['data']->get_id();
             $product = $this->get_product_dimensions($product_id);
+            if (is_null($product)) {
+                // product is a virtual product or does not need shipping
+                continue;
+            }
             if (!$product) {
                 $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
@@ -278,6 +287,10 @@ class Helper
             if (!$product_id)
                 $product_id = $item->get_product_id();
             $product = $this->get_product_dimensions($product_id);
+            if (is_null($product)) {
+                // product is a virtual product or does not need shipping
+                continue;
+            }
             if (!$product) {
                 $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
@@ -336,10 +349,17 @@ class Helper
     {
         $address = Helper::get_address($order);
 
+        $customer_document = '11111111';
+
+        if ($order->billing_dni_facturante) {
+            // Compatibilidad con facturante para obtener el DNI
+            $customer_document = $order->billing_dni_facturante;
+        }
+
         if ($order->has_shipping_address()) {
             $destination = array(
                 'name' => $order->get_shipping_first_name().' '.$order->get_shipping_last_name(),
-                'document' => 11111111,
+                'document' => $customer_document,
                 'street' => $address['street'],
                 'street_number' => $address['number'],
                 'street_extras' => $address['floor'].' '.$address['apartment'],
@@ -353,7 +373,7 @@ class Helper
         } else {
             $destination = array(
                 'name' => $order->get_billing_first_name().' '.$order->get_billing_last_name(),
-                'document' => 11111111,
+                'document' => $customer_document,
                 'street' => $address['street'],
                 'street_number' => $address['number'],
                 'street_extras' => $address['floor'].' '.$address['apartment'],
@@ -444,7 +464,7 @@ class Helper
         if (!preg_match('/^ ?\d+ ?$/', $street_number, $res)) {
             //the street number it's not an actual number. We'll move it to street
             $street_name .= " " . $street_number;
-            $street_number = "";
+            $street_number = "S/N";
         }
 
         return array('street' => $street_name, 'number' => $street_number, 'floor' => $floor, 'apartment' => $apartment);

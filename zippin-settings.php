@@ -97,11 +97,20 @@ function init_settings()
 
     add_settings_field(
         'additional_charge',
-        'Cargo adicional',
+        'Modificar el precio del envío',
         __NAMESPACE__ . '\print_additional_charge',
         'zippin_settings',
         'zippin_main_section'
     );
+
+    add_settings_field(
+        'insurance_modifier',
+        'Valor declarado (seguro)',
+        __NAMESPACE__ . '\print_insurance_modifier',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
 
     add_settings_field(
         'webhook_instructions',
@@ -110,6 +119,15 @@ function init_settings()
         'zippin_settings',
         'zippin_main_section'
     );
+
+    add_settings_field(
+        'servicetype_instructions',
+        'Tipos de servicio habilitados',
+        __NAMESPACE__ . '\print_servicetype_instructions',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
 
     add_settings_field(
         'extra_info',
@@ -150,10 +168,10 @@ function print_account_id()
         $connector = new ZippinConnector;
         $account = $connector->get_account();
         if ($account) {
-            echo '<p class="success-text">Cuenta: <b>'.$account['name'].'</b></p>';
+            echo '<div class="help-box success-text">Cuenta: <b>'.$account['name'].'</b></div>';
         } else {
-            echo '<p class="danger-text">Cuenta: <b>SIN AUTORIZACIÓN</b><br>
-                Verifica que las credenciales sean válidas y correspondan a la cuenta indicada.</p>';
+            echo '<div class="help-box danger-text">Cuenta: <b>SIN AUTORIZACIÓN</b><br>
+                Verifica que las credenciales sean válidas y correspondan a la cuenta indicada.</div>';
         }
     }
 
@@ -161,28 +179,24 @@ function print_account_id()
 
 function print_webhooks_instructions()
 {
-    echo '<p class="warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a> y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
-    echo '<br>Configura tu webhook de la siguiente manera: <br>topic: <b>shipment</b> <br>URL: <strong>' . get_site_url(null, '?wc-api=zippin') . '</strong></p>';
+    echo '<div class="help-box warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a> y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
+    echo '<br>Configura tu webhook de la siguiente manera: <br>topic: <b>shipment</b> <br>URL: <strong>' . get_site_url(null, '?wc-api=zippin') . '</strong></div>';
 }
 
-function print_packaging_mode()
+function print_servicetype_instructions()
 {
-    $previous_config = get_option('zippin_packaging_mode');
-    echo '<p><label><input type="radio" name="packaging_mode" value="grouped"'.($previous_config=='grouped' || empty($previous_config) ? ' checked':'').'> Agrupar productos en un solo paquete por envío</label></p>';
-    echo '<p><label><input type="radio" name="packaging_mode" value="separate"'.($previous_config=='separate' ? ' checked':'').'> No agrupar productos (crear un paquete por cada unidad de cada producto).</label></p>';
-
-    echo '<br><p class="info-text">Si eliges agrupar los productos en un solo paquete, se sumará el peso y volumen de todos los productos y luego se calcularán dimensiones como una caja en forma de cubo.</p>';
-
+    echo '<div class="help-box warning-text">Para gestionar los tipos de servicio habilitados ingresa a los <a href="admin.php?page=wc-settings&tab=shipping" target="_blank">ajustes de envío de WooCommerce</a>, ingresa a la zona que quieras modificar, y en el metodo de envío <b>Envío con Zippin</b> (clic en Editar) selecciona los tipos de servicio que quieras habilitar.</div>';
 }
+
 
 function print_options_mix()
 {
     $previous_config = get_option('zippin_options_mix');
     echo '<p><label><input type="radio" required name="options_mix" value="first_by_service"'.($previous_config=='first_by_service' || empty($previous_config) ? ' checked':'').'> La mejor opcion por cada tipo de servicio</label></p>';
-    echo '<p><label><input type="radio" required name="options_mix" value="first"'.($previous_config=='first' ? ' checked':'').'> Mostrar un solo resultado entre todos los servicios.</label></p>';
-    echo '<p><label><input type="radio" required name="options_mix" value="all"'.($previous_config=='all' ? ' checked':'').'> Mostrar todas las opciones.</label></p>';
+    echo '<p><label><input type="radio" required name="options_mix" value="all"'.($previous_config=='all' ? ' checked':'').'> Mostrar todas las opciones de todos los servicios</label></p>';
+    echo '<p><label><input type="radio" required name="options_mix" value="first"'.($previous_config=='first' ? ' checked':'').'> Mostrar una cantidad maxima de opciones:</label></p>';
+    echo '<p><small>Cantidad máxima de opciones</small><br><input type="number"  min="1" name="options_mix_count" value="' . get_option('zippin_options_mix_count',1) . '" /></p>';
 }
-
 
 
 function print_default_shipping_status()
@@ -199,7 +213,7 @@ function print_default_shipping_status()
         }
     }
     echo '</select>';
-    echo '<p class="info-text">Los pedidos con este estado serán enviados automáticamente a Zippin</p>';
+    echo '<div class="help-box info-text">Los pedidos con este estado serán enviados automáticamente a Zippin</div>';
 }
 
 function print_free_shipping_creation()
@@ -207,21 +221,42 @@ function print_free_shipping_creation()
     $previous_config = get_option('zippin_create_free_shipments');
     echo '<p><label><input type="radio" name="enable_free_shipping_creation" value="yes"'.($previous_config=='yes' ? ' checked':'').'> Si</label> ';
     echo '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="enable_free_shipping_creation" value="no"'.($previous_config=='no' || empty($previous_config) ? ' checked':'').'> No</label></p>';
-    echo '<p class="info-text">Si habilitas esta opción, los envíos con Envío gratis se crearán en Zippin. La selección del transporte será automática según la configuración de tu cuenta. <br>
+    echo '<div class="help-box info-text">Si habilitas esta opción, los envíos con Envío gratis se crearán en Zippin. La selección del transporte será automática según la configuración de tu cuenta. <br>
 <small>Aprende <a href="https://docs.woocommerce.com/document/free-shipping/" target="_blank">cómo configurar envío gratis en Woocomerce</a> y configura en Zippin <a target="_blank" href="https://app.zippin.com.ar/myaccount/account/settings">tus opciones de selección de transporte (solapa Opciones)</a>.</small>
-</p>';
+</div>';
 }
 
 function print_additional_charge(){
-	$previous_config = get_option('zippin_additional_charge');
-    echo '<input type="number" required name="additional_charge" value="' . ($previous_config ? $previous_config : 0) . '" />
-	<p class="info-text">El valor numérico ingresado se expresara como porcentaje. Ej: 20%. Dejar en cero para desactivar opción.</p>';
+	$previous_config = get_option('zippin_additional_charge_operation', 'add');
+    echo '<select name="additional_charge_operation">';
+    echo '<option value="add" ' . ($previous_config === 'add' ? 'selected' : '') . '>Sumar (+)</option>';
+    echo '<option value="sub" ' . ($previous_config === 'sub' ? 'selected' : '') . '>Restar (-)</option>';
+    echo '</select>';
+
+    $previous_config = get_option('zippin_additional_charge', '0');
+    echo '<br><input type="number" required name="additional_charge" min="0" value="' . (isset($previous_config) ? $previous_config : 0) . '" />';
+
+    $previous_config = get_option('zippin_additional_charge_type','rel');
+    echo '<br><select name="additional_charge_type">';
+    echo '<option value="rel" ' . ($previous_config === 'rel' ? 'selected' : '') . '>%</option>';
+    echo '<option value="abs" ' . ($previous_config === 'abs' ? 'selected' : '') . '>$</option>';
+    echo '</select>';
+
+    echo '<div class="help-box info-text">Usa esta opción si quieres cobrarle un precio de envío distinto tu cliente. Zippin te cobrará el precio real que corresponda para el envío.</div>';
+
 }
 
-function print_free_shipping_threshold(){
+function print_insurance_modifier(){
+    $previous_config = get_option('zippin_insurance_modifier', 100);
+    echo '<input type="number" required min="0" name="insurance_modifier" value="' . (get_option('zippin_insurance_modifier', 100)) . '" /> % (del subtotal de la orden)
+	<div class="help-box info-text">Indicar el porcentaje del subtotal de la orden que quieras declarar para el seguro. Si indicas 0% significa que no quieres asegurar el envío. 100% significa que el valor declarado es equivalente al subtotal de la orden.</div>';
+}
+
+function print_free_shipping_threshold()
+{
     $previous_config = get_option('zippin_free_shipping_threshold');
     echo '<input type="number" name="free_shipping_threshold" value="' . ($previous_config ? $previous_config : '') . '" />
-	<p class="info-text">Hacer que el precio del envío se muestre como gratis si el total de la orden es igual o mayor al valor indicado. Dejar en blanco para desactivar opción.</p>';
+	<div class="help-box info-text">Hacer que el precio del envío se muestre como gratis si el total de la orden es igual o mayor al valor indicado. Dejar en blanco para desactivar opción.</div>';
 }
 
 function print_origins()
@@ -255,7 +290,7 @@ function print_origins()
         }
         echo '</select>';
     } else {
-        echo '<p class="warning-text">Luego de guardar tus credenciales te mostraremos aquí los orígenes disponibles y podrás seleccionar uno.</p>';
+        echo '<div class="help-box warning-text">Luego de guardar tus credenciales te mostraremos aquí los orígenes disponibles y podrás seleccionar uno.</div>';
     }
 
 }
@@ -263,7 +298,7 @@ function print_origins()
 
 function print_extra_info()
 {
-    echo '<p class="warning-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</p>';
+    echo '<div class="help-box warning-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</div>';
 }
 
 function create_menu_option()
@@ -334,6 +369,12 @@ function settings_page_content()
         update_option('zippin_options_mix', sanitize_text_field($_POST['options_mix']));
     }
 
+    if (isset($_POST['options_mix_count'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_options_mix_count', sanitize_text_field($_POST['options_mix_count']));
+    }
+
+
 	// Save shipping status
     if (isset($_POST['shipping_status'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
@@ -345,11 +386,31 @@ function settings_page_content()
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
         update_option('zippin_create_free_shipments', sanitize_text_field($_POST['enable_free_shipping_creation']));
     }
-	
-	if (isset($_POST['additional_charge'])) {
+
+
+    // insurance_modifier
+    if (isset($_POST['insurance_modifier'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_insurance_modifier', filter_var($_POST['insurance_modifier'],FILTER_SANITIZE_NUMBER_INT));
+    }
+
+    // aditional charge
+    if (isset($_POST['additional_charge'])) {
 		wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
         update_option('zippin_additional_charge', filter_var($_POST['additional_charge'],FILTER_SANITIZE_NUMBER_INT));
     }
+
+    if (isset($_POST['additional_charge_type'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_additional_charge_type', sanitize_text_field($_POST['additional_charge_type']));
+    }
+
+    if (isset($_POST['additional_charge_operation'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_additional_charge_operation', sanitize_text_field($_POST['additional_charge_operation']));
+    }
+
+
 
     if (isset($_POST['free_shipping_threshold'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
@@ -364,7 +425,7 @@ function settings_page_content()
 		<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 		<form action="options-general.php?page=zippin_settings" method="post">
         <?php
-        wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), 1.1);
+        wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), ZIPPIN_VERSION);
         wp_nonce_field('zippin_settings_save','zippin_wpnonce',false,true);
         settings_fields('zippin_settings');
         do_settings_sections('zippin_settings');

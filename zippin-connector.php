@@ -15,7 +15,8 @@ class ZippinConnector
     public $credentials_checked;
     protected $last_error;
 
-    const VERSION = 'official_1_6';
+    const SOURCE_FOR_API = 'woocommerce@'.ZIPPIN_VERSION;
+
 
     public function __construct()
     {
@@ -50,9 +51,13 @@ class ZippinConnector
     }
 
 
-
+    /**
+     * @param \WC_Order|null $order
+     * @return false|mixed
+     */
     public function create_shipment($order = null)
     {
+
         if (!$order) {
             $this->last_error = 'Invalid order.';
             $this->logger->warning('Invalid order', unserialize(ZIPPIN_LOGGER_CONTEXT));
@@ -77,13 +82,15 @@ class ZippinConnector
         // Create destination object
         $destination = $helper->get_destination_from_order($order);
 
+        $declared_value_modifier = get_option('zippin_insurance_modifier', 100)/100;
+        $declared_value = max(0, $order->get_subtotal() * $declared_value_modifier);
+
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
             'external_id' => 'W'.$order->get_id(),
-            'source' => 'wc_'.self::VERSION,   // Por favor dejar para poder dar mejor soporte.
-            'declared_value' => round(floatval($order->get_total()),2),
-            //'packages' => $products['packages'],
+            'source' => self::SOURCE_FOR_API,
+            'declared_value' => round(floatval($declared_value),2),
             'items' => $products['items'],
             'destination' => $destination
         );
@@ -112,8 +119,14 @@ class ZippinConnector
 
         if ($payload['service_type'] == 'pickup_point' && isset($shipment_info['point_id'])) {
             $payload['destination']['point_id'] = $shipment_info['point_id'];
-            unset($payload['destination']['street'], $payload['destination']['street_number'], $payload['destination']['street_extras']);
-            unset($payload['destination']['city'], $payload['destination']['state'], $payload['destination']['zipcode']);
+            unset(
+                $payload['destination']['street'],
+                $payload['destination']['street_number'],
+                $payload['destination']['street_extras'],
+                $payload['destination']['city'],
+                $payload['destination']['state'],
+                $payload['destination']['zipcode']
+            );
         }
 
         if ($response = $this->call_api('POST', '/shipments', $payload)) {
@@ -172,7 +185,7 @@ class ZippinConnector
         }
     }
 
-    public function quote($destination, $packages = [], $items = [], $declared_value = 0, $service_types = null, $mix = null)
+    public function quote($destination, $packages = [], $items = [], $declared_value = 0, $service_types = null, $mix = null, $max_count = 1)
     {
         if (!$this->credentials_checked) {
             return false;
@@ -186,9 +199,15 @@ class ZippinConnector
         $payload = array(
             'account_id' => $this->get_account_id(),
             'origin_id' => $this->get_origin_id(),
+            'source' => self::SOURCE_FOR_API,
             'declared_value' => round(floatval($declared_value),2),
             'destination' => $destination
         );
+
+        if (!$items) {
+            $this->logger->warning('received empty items array '.wc_print_r(json_encode($items), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            return false;
+        }
 
         if (count($items)) {
             $payload['items'] = $items;
@@ -215,7 +234,7 @@ class ZippinConnector
                         // Don't add options from disabled service_types
                         continue;
                     }
-                    if ($mix == 'first' && count($quote_results)> 0) {
+                    if ($mix == 'first' && count($quote_results) >= $max_count) {
                         continue;
                     }
                     if ($mix == 'first_by_service' && isset($service_type_counter[$result['service_type']['code']])) {
@@ -225,11 +244,17 @@ class ZippinConnector
 
                 $quote_result = array();
                 if ($result['service_type']['code'] == 'pickup_point') {
-                    $quote_result['service_name'] = 'Retiro en '.$result['carrier']['name'];
+                    $quote_result['service_name'] = 'Retirar por '.$result['carrier']['name'];
                 } else {
                     $quote_result['service_name'] = 'Entrega '.$result['carrier']['name']. ' a domicilio';
                 }
-                $quote_result['shipping_time'] = $result['delivery_time']['max']*24;
+
+                $estimated_delivery = new DateTime($result['delivery_time']['estimated_delivery'], new \DateTimeZone('UTC'));
+                $now = new DateTime('now');
+                $diff = $now->diff($estimated_delivery);
+
+                $quote_result['delivery_date'] = $estimated_delivery;
+                $quote_result['shipping_time'] = $diff;
                 $quote_result['price'] = $result['amounts']['price_incl_tax'];
                 $quote_result['code'] = $result['carrier']['id'].'|'.$result['service_type']['code'].'|'.$result['logistic_type'];
                 $quote_result['result'] = $result;
@@ -256,12 +281,11 @@ class ZippinConnector
             $headers['Content-Type'] = 'application/json';
             $headers['Accept'] = 'application/json';
             $headers['Authorization'] = 'Basic '.base64_encode($this->get_api_key().':'.$this->get_api_secret());
-            $headers['x-show-pickup-points'] = 'true';
 
             $url = 'https://api.zippin.com.ar/v2' . $endpoint;
             $args = array(
                 'headers' => $headers,
-                'timeout' => 10
+                'timeout' => 15
             );
 
             if ($method === 'GET') {

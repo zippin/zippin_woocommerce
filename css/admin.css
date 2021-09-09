@@ -1,5 +1,14 @@
-.success-text{width:340px;background-color: #8bc34a2e;padding:10px;}
-.info-text{width:340px;background-color: #03a9f41f;padding:10px;}
-.danger-text{width:340px;background-color: #f443361a;padding:10px;}
-.warning-text{width:340px;background-color: #f4a8361a;padding:10px;}
+.help-box {
+    width:90%;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border-radius: 4px;
+    margin-top: 12px;
+}
+
+.success-text{background-color: #8bc34a2e;}
+.info-text{background-color: #03a9f41f;}
+.danger-text{background-color: #f443361a;}
+.warning-text{background-color: #f4a8361a;}
+
 tr input, tr select{width: 360px;}

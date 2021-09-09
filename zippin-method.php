@@ -42,10 +42,10 @@ function zippin_init()
                         'title' => __('Tipos de Servicio Habilitados', 'woocommerce'),
                         'description'=>'Selecciona los tipos de servicio que quieras ofrecer. Selecciona múltiples opciones manteniendo la tecla CTRL.',
                         'type' => 'multiselect',
-                        'default' => array('standard_delivery','urgent_delivery','pickup_point'),
+                        'default' => array('standard_delivery','express_delivery','pickup_point'),
                         'options' => array(
                             'standard_delivery' => 'Entrega a domicilio estándar',
-                            'urgent_delivery' => 'Entrega en el Día',
+                            'express_delivery' => 'Entrega rápida',
                             'pickup_point' => 'Entrega en sucursal',
                         )
                     ),
@@ -91,20 +91,23 @@ function zippin_init()
                 // Get declared value
                 $declared_value = WC()->cart->get_subtotal();
                 if (!empty($declared_value)) {
+                    $declared_value_modifier = get_option('zippin_insurance_modifier', 100)/100;
+                    $declared_value = max(0, $declared_value * $declared_value_modifier);
                     $declared_value = number_format($declared_value, 2, '.', '');
                 }
 
                 // Quote and get results
                 $mix = get_option('zippin_options_mix');
+                $max_count = (int)get_option('zippin_options_mix_count', 1);
                 $connector = new ZippinConnector;
-                $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix);
+                $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix, $max_count);
 
                 if ($quote_results) {
 
-                    if (get_option('zippin_additional_charge'))	{
-                        $additional_charge = get_option('zippin_additional_charge');
+                    if (!empty(get_option('zippin_additional_charge', 0))) {
+                        $additional_charge = true;
                     } else {
-                        $additional_charge = '0';
+                        $additional_charge = false;
                     }
 
                     $use_free_shipping = false;
@@ -116,33 +119,46 @@ function zippin_init()
 
                     foreach ($quote_results as $result) {
 
+                        /** @var \DateInterval $shipping_time */
+                        $shipping_time = $result['shipping_time'];
+
+                        /** @var \DateTime $delivery_date */
+                        $delivery_date = $result['delivery_date'];
+
+                        // Texto tiempo de entrega
                         if ($result['result']['service_type']['code'] == 'pickup_point') {
-                            if ($result['shipping_time'] > 24) {
-                                $time = '(a partir de '. ($result['shipping_time']/24).' días háb. desde el despacho)';
-                            } elseif ($result['shipping_time'] == 24) {
-                                $time = '(a partir del día siguiente del despacho)';
-                            } else {
-                                $time = '(el día del despacho)'.$result['shipping_time'];
-                            }
+                            $time = 'disponible '.$this->localize_date($delivery_date, $shipping_time);
                         } else {
-                            if ($result['shipping_time'] > 24) {
-                                $time = '(hasta '. ($result['shipping_time']/24).' días háb. desde el despacho)';
-                            } elseif ($result['shipping_time'] == 24) {
-                                $time = '(al día siguiente del despacho)';
-                            } else {
-                                $time = '(el día del despacho)'.$result['shipping_time'];
-                            }
+                            $time = 'llega '.$this->localize_date($delivery_date, $shipping_time);
                         }
 
+                        // Costo
+                        $cost = (isset($result['price']) ? $result['price'] : 0);
 
                         if ($use_free_shipping) {
                             $cost = 0;
-                        } elseif (!empty($additional_charge)){
-                            $cost = (isset($result['price']) ? $result['price'] + ($result['price'] * $additional_charge / 100) : 0);
-                        } else {
-                            $cost = (isset($result['price']) ? $result['price'] : 0);
+
+                        } elseif ($additional_charge){
+                            $operator = get_option('zippin_additional_charge_operation', 'add');
+                            if ($operator == 'sub') {
+                                $sign = -1;
+                            } else {
+                                $sign = 1;
+                            }
+
+                            if (get_option('zippin_additional_charge_type', 'rel') == 'abs') {
+                                // Cambio en valor absoluto
+                                $cost = $cost + get_option('zippin_additional_charge', 0) * $sign;
+
+                            } else {
+                                // Cambio en valor relativo
+                                $cost = $cost + $cost * get_option('zippin_additional_charge', 0)/100 * $sign;
+                            }
+
+                            $cost = max(0, $cost);
                         }
 
+                        // Armado de rates
                         if ($result['result']['service_type']['code'] == 'pickup_point') {
                             $i=1;
                             foreach ($result['result']['pickup_points'] as $point) {
@@ -151,7 +167,7 @@ function zippin_init()
                                 $address = $point['location']['street'].' '.$point['location']['street_number'].', '.$point['location']['city'];
                                 $rate = array(
                                     'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : '').'|'.$point['point_id'],
-                                    'label' => $result['service_name'] . ' - '. $point['description'] . ' - '. $address.' ' . $time,
+                                    'label' => $result['service_name'] . ' - '. $point['description'] . ' - '. $address.', ' . $time,
                                     'cost' => $cost,
                                     'calc_tax' => 'per_order'
                                 );
@@ -163,7 +179,7 @@ function zippin_init()
                         } else {
                             $rate = array(
                                 'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : '').'|x',
-                                'label' => $result['service_name'] . ' ' . $time,
+                                'label' => $result['service_name'] . ', ' . $time,
                                 'cost' => $cost,
                                 'calc_tax' => 'per_order'
                             );
@@ -183,6 +199,29 @@ function zippin_init()
                 $helper = new Helper();
                 $products = $helper->get_items_from_cart();
                 return $products;
+            }
+
+            private function localize_date(\DateTime $datetime, \DateInterval $diff_to_now)
+            {
+
+                $datetime = $datetime->setTimezone(new \DateTimeZone(get_option('timezone_string')));
+
+                if ($diff_to_now->days < 7) {
+                    // Responder con fecha relativa o dia de semana
+                    if ($diff_to_now->days < 1) {
+                        return 'hoy';
+                    } elseif ($diff_to_now->days > 1) {
+                        return 'el '. __($datetime->format('l'));
+                    } else {
+                        return 'mañana';
+                    }
+
+                } else {
+                    // Responder con la fecha exacta
+                    return 'el '.$datetime->format('d').' de '.strtolower(__($datetime->format('F')));
+                }
+
+
             }
 
         }

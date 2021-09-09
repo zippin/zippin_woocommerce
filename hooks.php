@@ -28,3 +28,6 @@ add_shortcode('zippin_tracking', 'Zippin\Zippin\Utils\create_shortcode');
 
 // --- Webhook handler
 add_action('woocommerce_api_zippin', 'Zippin\Zippin\Utils\handle_webhook');
+
+// Compatibilidad con plugin Woocommerce Shipping Calculator On Product Page (Magerips)
+add_filter( 'woocommerce_shipping_calculator_enable_city', '__return_true');

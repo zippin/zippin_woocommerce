@@ -57,6 +57,8 @@ function update_order_meta($order_id)
                 $order->update_meta_data('zippin_shipment', serialize($shipment));
                 $order->add_order_note('Se creó el envío en Zippin (ID: '.$shipment['id'].')');
                 $order->save();
+            } else {
+                $order->add_order_note('Falló la creación del envío en Zippin ('.$connector->getLastError().')');
             }
         }
     }
@@ -94,6 +96,8 @@ function process_order_status($order_id, $old_status, $new_status)
                 $order->save();
             } else {
                 wc_get_logger()->warning('Failed shipment creation for order '.$order->get_id().$connector->getLastError(), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $order->add_order_note('Falló la creación del envío en Zippin ('.$connector->getLastError().')');
+
             }
         }
 
@@ -136,7 +140,7 @@ function box_content()
     $shipment = $order->get_meta('zippin_shipment', true);
 
     if (empty($shipment) || $shipment == 'b:0;') {
-        echo 'Aun no se ha creado un envío en Zippin.';
+        echo '<b>Aún no se ha creado un envío en Zippin.</b><br>Se creará una vez que la orden se ponga en el estado configurado en las opciones del plugin.';
         return true;
     }
 
@@ -286,8 +290,8 @@ function create_shortcode()
     }
 
     $content .= '<form method="post" class="zippin-tracking-form" action="'.get_permalink().'">
-		<input type="text" value="'.filter_var($_REQUEST['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT).'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
-		<input type="email" value="'.sanitize_email($_REQUEST['zippin_tracking_order_email']).'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
+		<input type="text" value="'.(isset($_REQUEST['zippin_tracking_order_id']) ? filter_var($_REQUEST['zippin_tracking_order_id'],FILTER_SANITIZE_NUMBER_INT) : '').'" name="zippin_tracking_order_id" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa número de orden"><br>
+		<input type="email" value="'.(isset($_REQUEST['zippin_tracking_order_email']) ? sanitize_email($_REQUEST['zippin_tracking_order_email']) : '').'" name="zippin_tracking_order_email" style="width:40%" class="zippin-tracking-form-field" placeholder="Ingresa el e-mail de la compra"><br>
 		<br />
 		<input type="submit" value="Consultar estado" id="update_button" class="zippin-tracking-form-submit update_button" style="cursor: pointer;"/>
 		</form>';
