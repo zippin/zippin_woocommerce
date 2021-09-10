@@ -204,7 +204,7 @@ function zippin_init()
             private function localize_date(\DateTime $datetime, \DateInterval $diff_to_now)
             {
 
-                $datetime = $datetime->setTimezone(new \DateTimeZone(get_option('timezone_string')));
+                $datetime = $datetime->setTimezone(new \DateTimeZone(wp_timezone_string()));
 
                 if ($diff_to_now->days < 7) {
                     // Responder con fecha relativa o dia de semana
