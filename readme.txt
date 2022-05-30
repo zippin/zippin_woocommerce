@@ -1,20 +1,20 @@
 === Envios con Zippin en Woocommerce ===
 Contributors: zippindevelopers
-Donate link: https://www.zippin.com.ar/
-Tags: envios, zippin, argentina, shipping, woocommerce
+Donate link: https://www.zippin.app/
+Tags: envios, zippin, shipping, woocommerce
 Requires at least: 4.6
 Tested up to: 5.4.2
 Requires PHP: 7
-Stable tag: 1.7
+Stable tag: 2.0
 Language: Spanish
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo Argentina.
+Conecta tu tienda Woocommerce con Zippin para realizar envíos en Argentina y Chile.
 
 == Description ==
 
-Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo Argentina.
+Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo el país.
 Zippin es una solución para realizar envíos de productos de cualquier tamaño con múltiples operadores logísticos, desde una única plataforma donde gestionarlos.
 Este plugin para Woocommerce te permitirá crear envíos en múltiples transportes con una sola integración, a través de Zippin.
 
@@ -29,19 +29,19 @@ La integración te permitirá:
 1. Instalar el plugin directamente a través de WordPress. Alternativamente, se pueden subir todos los archivos del plugin a la carpeta `/wp-content/plugins/woocommerce-zippin`.
 2. Activar el plugin en WordPress desde la sección Plugins.
 3. Configurar el plugin desde Ajustes > Configuración de Zippin
-4. Configurar los tipos de servicio en la configuracion de Envíos y Zonas de Woocommerce (Woocommerce > Settings > Shipping > Argentina > Envío con Zippin)
+4. Configurar los tipos de servicio en la configuración de Envíos y Zonas de Woocommerce (Woocommerce > Settings > Shipping > [Nombre de la zona] > Envío con Zippin)
 
 
 == Frequently Asked Questions ==
 
 = ¿Es necesario tener una cuenta en Zippin? =
-Si, deberás tener una cuenta activa y configurada. Puedes crear una cuenta en https://www.zippin.com.ar
+Si, deberás tener una cuenta activa y configurada. Puedes crear una cuenta en https://www.zippin.app
 
 = ¿Tiene algun costo usar el plugin? =
 El uso del plugin es gratuito. Solo pagarás por los envíos que realices.
 
 = ¿En donde se puede usar Zippin? =
-Por el momento solo podrás hacer envíos en Argentina.
+Por el momento solo podrás hacer envíos en Argentina y Chile.
 
 
 == Screenshots ==
@@ -56,6 +56,11 @@ Por el momento solo podrás hacer envíos en Argentina.
 
 
 == Changelog ==
+
+= 2.0 =
+Support for Chile
+Option to set a customer document custom field
+Bug fixing
 
 = 1.7 =
 Support for express delivery
@@ -93,6 +98,9 @@ Primer versión. Permite conectar la cuenta, cotizar y crear envíos.
 
 
 == Upgrade Notice ==
+
+= 2.0 =
+Cambio importante para soporte multipais. Es necesario reconfigurar el plugin.
 
 = 1.0 =
 Primer versión.
