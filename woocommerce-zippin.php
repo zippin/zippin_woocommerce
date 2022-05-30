@@ -3,9 +3,9 @@
  * Plugin Name: Envíos con Zippin para Woocommerce
  * Plugin URI: https://zippin-plugins.s3.amazonaws.com/woocommerce/zippin_woocommerce.zip
  * Description: Integra WooCommerce con Zippin para realizar envíos con múltiples transportes a todo el país.
- * Version: 1.7
+ * Version: 2.0
  * Author: Zippin
- * Author URI: https://www.zippin.com.ar/
+ * Author URI: https://www.zippin.app/
  * Requires PHP: 7
  * License: GPL2
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
@@ -20,10 +20,11 @@ if (!defined('ABSPATH')) {
 
 define('ZIPPIN_APIKEY', '');
 define('ZIPPIN_SECRETKEY', '');
+define('ZIPPIN_DOMAIN', '');
 
 
 define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
-define('ZIPPIN_VERSION', '1.7');
+define('ZIPPIN_VERSION', '2.0');
 
 
 register_activation_hook(__FILE__, 'Zippin\Zippin\Utils\activate_plugin');

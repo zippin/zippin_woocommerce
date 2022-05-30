@@ -191,9 +191,22 @@ class ZippinConnector
             return false;
         }
 
-        if (strlen($destination['zipcode'])<4 || strlen($destination['city'])==0 || strlen($destination['state'])<4) {
-            // Evitamos enviar un request que sabemos que va a fallar
-            return false;
+        $current_domain = Helper::get_current_domain();
+        //$this->logger->debug('domain '.wc_print_r(json_encode($current_domain), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+
+        if ($current_domain['use_zipcode']) {
+            if (strlen($destination['zipcode'])<$current_domain['zipcode_length'] || strlen($destination['city'])==0 || strlen($destination['state'])<2) {
+                // Evitamos enviar un request que sabemos que va a fallar
+                $this->logger->debug('Incomplete destination '.wc_print_r(json_encode($destination), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+
+                return false;
+            }
+        } else {
+            if (strlen($destination['city']) == 0 || strlen($destination['state']) < 2) {
+                // Evitamos enviar un request que sabemos que va a fallar
+                $this->logger->debug('Incomplete destination '.wc_print_r(json_encode($destination), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                return false;
+            }
         }
 
         $payload = array(
@@ -211,8 +224,8 @@ class ZippinConnector
 
         if (count($items)) {
             $payload['items'] = $items;
-            if (count($items)>500) {
-                $this->logger->warning('Unable to quote more than 500 items - body: '.wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+            if (count($items)>1000) {
+                $this->logger->warning('Unable to quote more than 1000 items - body: '.wc_print_r(json_encode($payload), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
 
@@ -277,12 +290,14 @@ class ZippinConnector
 
     public function call_api($method = '', $endpoint = '', $params = array(), $headers = array())
     {
+        $zippin_domain = Helper::get_current_domain();
+
         if ($method && $endpoint) {
             $headers['Content-Type'] = 'application/json';
             $headers['Accept'] = 'application/json';
             $headers['Authorization'] = 'Basic '.base64_encode($this->get_api_key().':'.$this->get_api_secret());
 
-            $url = 'https://api.zippin.com.ar/v2' . $endpoint;
+            $url = 'https://api.'.$zippin_domain['domain'].'/v2' . $endpoint;
             $args = array(
                 'headers' => $headers,
                 'timeout' => 15

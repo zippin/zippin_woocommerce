@@ -77,9 +77,9 @@ function zippin_init()
                     'zipcode' => WC()->customer->get_shipping_postcode()
                 ];
 
-                //$this->logger->info('Quote Log - billing: '.wc_print_r(json_encode($billing_address), true).' - shipping: '.wc_print_r(json_encode($shipping_address), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $this->logger->debug('Quote Log - billing: '.wc_print_r(json_encode($billing_address), true).' - shipping: '.wc_print_r(json_encode($shipping_address), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
 
-                if (!empty($shipping_address['city']) && !empty($shipping_address['state']) && !empty($shipping_address['zipcode'])) {
+                if (!empty($shipping_address['city']) && !empty($shipping_address['state'])) {
                     $destination = $shipping_address;
                 } else {
                     $destination = $billing_address;
@@ -97,13 +97,17 @@ function zippin_init()
                 }
 
                 // Quote and get results
-                $mix = get_option('zippin_options_mix');
-                $max_count = (int)get_option('zippin_options_mix_count', 1);
-                $connector = new ZippinConnector;
-                $quote_results = $connector->quote($destination, [], $products['items'], $declared_value, $this->get_instance_option('service_types'), $mix, $max_count);
+                $quote_results = (new ZippinConnector)->quote(
+                    $destination,
+                    [],
+                    $products['items'],
+                    $declared_value,
+                    $this->get_instance_option('service_types'),
+                    get_option('zippin_options_mix'),
+                    (int)get_option('zippin_options_mix_count', 1)
+                );
 
                 if ($quote_results) {
-
                     if (!empty(get_option('zippin_additional_charge', 0))) {
                         $additional_charge = true;
                     } else {

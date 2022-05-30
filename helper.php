@@ -38,40 +38,78 @@ class Helper
         );
     }
 
+    public static function get_domains($domain = null)
+    {
+        $domains = [
+            'AR' => ['country' => 'AR', 'name' => 'Argentina', 'domain'=>'zippin.com.ar', 'use_zipcode'=>true, 'zipcode_length'=>4],
+            'CL' => ['country' => 'CL', 'name' => 'Chile', 'domain'=>'zippin.cl', 'use_zipcode'=>false, 'zipcode_length'=>7],
+        ];
+
+        if ($domain) {
+            if (!isset($domains[strtoupper($domain)])) {
+                return null;
+            }
+            return $domains[strtoupper($domain)];
+        }
+
+        return $domains;
+
+    }
+
+    public static function get_current_domain()
+    {
+        return self::get_domains(get_option('zippin_domain'));
+    }
+
 
     public static function get_state_name($state_id = '')
     {
-        $states = [
-            'C' => 'Capital Federal',
-            'B' => 'Buenos Aires',
-            'K' => 'Catamarca',
-            'H' => 'Chaco',
-            'U' => 'Chubut',
-            'X' => 'Cordoba',
-            'W' => 'Corrientes',
-            'E' => 'Entre Rios',
-            'P' => 'Formosa',
-            'Y' => 'Jujuy',
-            'L' => 'La Pampa',
-            'F' => 'La Rioja',
-            'M' => 'Mendoza',
-            'N' => 'Misiones',
-            'Q' => 'Neuquen',
-            'R' => 'Rio Negro',
-            'A' => 'Salta',
-            'J' => 'San Juan',
-            'D' => 'San Luis',
-            'Z' => 'Santa Cruz',
-            'S' => 'Santa Fe',
-            'G' => 'Santiago del Estero',
-            'V' => 'Tierra del Fuego',
-            'T' => 'Tucuman',
-        ];
+        $current_domain = self::get_current_domain();
 
-        if (isset($states[$state_id])) {
-            return $states[$state_id];
+        if ($current_domain['country'] == 'AR') {
+            $states = [
+                'C' => 'Capital Federal',
+                'B' => 'Buenos Aires',
+                'K' => 'Catamarca',
+                'H' => 'Chaco',
+                'U' => 'Chubut',
+                'X' => 'Cordoba',
+                'W' => 'Corrientes',
+                'E' => 'Entre Rios',
+                'P' => 'Formosa',
+                'Y' => 'Jujuy',
+                'L' => 'La Pampa',
+                'F' => 'La Rioja',
+                'M' => 'Mendoza',
+                'N' => 'Misiones',
+                'Q' => 'Neuquen',
+                'R' => 'Rio Negro',
+                'A' => 'Salta',
+                'J' => 'San Juan',
+                'D' => 'San Luis',
+                'Z' => 'Santa Cruz',
+                'S' => 'Santa Fe',
+                'G' => 'Santiago del Estero',
+                'V' => 'Tierra del Fuego',
+                'T' => 'Tucuman',
+            ];
+
+            if (isset($states[$state_id])) {
+                return $states[$state_id];
+            }
+
+        } elseif ($current_domain['country'] == 'CL') {
+            if (strlen($state_id) == 2) {
+                $states = Helper::get_states('CL');
+                if (isset($states[$state_id])) {
+                    return $states[$state_id];
+                }
+            }
+
+            return $state_id;
+
         }
-        
+
         return null;
     }
 
@@ -105,55 +143,6 @@ class Helper
         return $regions;
     }
 
-    public function get_street()
-    {
-        if (!$this->order) {
-            return false;
-        }
-        if ($this->order->has_shipping_address()) {
-            $address = $this->order->get_shipping_address_1();
-        } else {
-            $address = $this->order->get_billing_address_1();
-        }
-
-        $address_array = explode(" ", $address);
-        $address = '';
-        foreach ($address_array as $key => $value_of_array) {
-            if ($key === 0) {
-                $address .= $value_of_array;
-            } else {
-                if (is_numeric($value_of_array)) {
-                    break;
-                }
-                $address .= ' ' . $value_of_array;
-            }
-        }
-        return $address;
-    }
-
-    public function get_province_id()
-    {
-        if (!$this->order) {
-            return false;
-        }
-        if ($this->order->has_shipping_address()) {
-            $province = $this->order->get_shipping_state();
-        } else {
-            $province = $this->order->get_billing_state();
-        }
-        return $province;
-    }
-
-    public function get_postal_code()
-    {
-        if (!$this->order) {
-            return false;
-        }
-        if ($this->order->has_shipping_address()) {
-            return $this->order->get_shipping_postcode();
-        }
-        return $this->order->get_billing_postcode();
-    }
 
     private function get_packages_from_products($products)
     {
@@ -309,41 +298,6 @@ class Helper
         return $packages;
     }
 
-    public function get_street_number()
-    {
-        if (!$this->order) {
-            return false;
-        }
-        if ($this->order->has_shipping_address()) {
-            $address = $this->order->get_shipping_address_1();
-        } else {
-            $address = $this->order->get_billing_address_1();
-        }
-
-        $number = '';
-        $address_array = array_reverse(explode(" ", $address));
-        foreach ($address_array as $value_of_array) {
-            if (is_numeric($value_of_array)) {
-                $number = $value_of_array;
-                break;
-            }
-        }
-
-        if (!$number) {
-            if ($this->order->has_shipping_address()) {
-                $address = $this->order->get_shipping_address_2();
-            } else {
-                $address = $this->order->get_billing_address_2();
-            }
-            if (is_numeric($address)) {
-                $number = $address;
-            }
-        }
-
-        return $number;
-    }
-
-
 
     public function get_destination_from_order($order)
     {
@@ -354,6 +308,9 @@ class Helper
         if ($order->billing_dni_facturante) {
             // Compatibilidad con facturante para obtener el DNI
             $customer_document = $order->billing_dni_facturante;
+
+        } elseif ($document_field = get_option('zippin_document_field')) {
+            $customer_document = $order->$document_field;
         }
 
         if ($order->has_shipping_address()) {
@@ -536,5 +493,35 @@ class Helper
         }
 
         return array($floor, $apartment);
+    }
+
+    public static function get_states($cc = null) {
+        $states = [
+            'CL' => [
+                'RM' => 'RM (Metropolitana)',
+                'AI' => 'Aysén',
+                'AN' => 'Antofagasta',
+                'AP' => 'Arica y Parinacota',
+                'AT' => 'Atacama',
+                'BI' => 'Biobío',
+                'CO' => 'Coquimbo',
+                'AR' => 'La Araucanía',
+                'LI' => 'Libertador B. O\'Higgins',
+                'LL' => 'Los Lagos',
+                'LR' => 'Los Ríos',
+                'MA' => 'Magallanes',
+                'ML' => 'Maule',
+                'TA' => 'Tarapacá',
+                'VS' => 'Valparaíso',
+                'NB' => 'Ñuble',
+            ]
+        ];
+
+        if (isset($states[strtoupper($cc)])) {
+            return $states[strtoupper($cc)];
+        }
+
+        return $states;
+
     }
 }
