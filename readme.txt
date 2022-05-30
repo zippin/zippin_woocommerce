@@ -99,5 +99,8 @@ Primer versión. Permite conectar la cuenta, cotizar y crear envíos.
 
 == Upgrade Notice ==
 
+= 2.0 =
+Cambio importante para soporte multipais. Es necesario reconfigurar el plugin.
+
 = 1.0 =
 Primer versión.
