@@ -88,7 +88,6 @@ function process_order_status($order_id, $old_status, $new_status)
 
             $connector = new ZippinConnector;
             $shipment = $connector->create_shipment($order);
-            wc_get_logger()->info('ship '.print_r($shipment, true), unserialize(ZIPPIN_LOGGER_CONTEXT));
             if ($shipment) {
                 // Shipment creado
                 $order->update_meta_data('zippin_shipment', serialize($shipment));
@@ -140,12 +139,16 @@ function box_content()
     $shipment = $order->get_meta('zippin_shipment', true);
 
     if (empty($shipment) || $shipment == 'b:0;') {
-        echo '<b>Aún no se ha creado un envío en Zippin.</b><br>Se creará una vez que la orden se ponga en el estado configurado en las opciones del plugin.';
+        $statuses = wc_get_order_statuses();
+        $target_status = @$statuses[get_option('zippin_shipping_status')];
+
+        echo '<b>Aún no se ha creado un envío en Zippin.</b><br>Se creará una vez que la orden se ponga en el estado configurado en las opciones del plugin ('.$target_status.').';
         return true;
     }
 
     $shipment = unserialize($shipment);
-    echo '<h4><a target="_blank" href="https://app.zippin.com.ar/shipments/'.$shipment['id'].'">Envío '.$shipment['external_id'].' ('.$shipment['id'].')</a></h4>';
+    $zippin_domain = Helper::get_current_domain();
+    echo '<h4><a target="_blank" href="https://app.'.$zippin_domain['domain'].'/shipments/'.$shipment['id'].'">Envío '.$shipment['external_id'].' ('.$shipment['id'].')</a></h4>';
     echo '<p>Estado: <b>'.$shipment['status_name'].'</b></p>';
     if (!empty($shipment['carrier']['logo'])) {
         echo '<p><img style="max-height: 40px; max-width: 100%" src="'.$shipment['carrier']['logo'].'" title="'.$shipment['carrier']['name'].'">';
@@ -161,7 +164,7 @@ function box_content()
 
     echo '<p>';
     if (in_array($shipment['status'],['documentation_ready','ready_to_ship'])) {
-        echo '<a class="button button-primary" target="_blank" href="https://app.zippin.com.ar/shipments/' . $shipment['id'] . '/download_documentation?format=pdf">Descargar Etiquetas</a>';
+        echo '<a class="button button-primary" target="_blank" href="https://app.'.$zippin_domain['domain'].'/shipments/' . $shipment['id'] . '/download_documentation?format=pdf">Descargar Etiquetas</a>';
     }
     echo ' <a class="button" target="_blank" href="'.$shipment['tracking'].'">Ver Tracking</a></p>';
 
@@ -173,6 +176,8 @@ function add_action_button($actions, $order)
 {
     $order_shipping_methods = $order->get_shipping_methods();
     $chosen_shipping_method = reset($order_shipping_methods);
+    $zippin_domain = Helper::get_current_domain();
+
     if (!$chosen_shipping_method) {
         return $actions;
     }
@@ -183,7 +188,7 @@ function add_action_button($actions, $order)
         if ($shipment_info) {
             $shipment_info = unserialize($shipment_info);
             $actions['zippin-label'] = array(
-                'url' => 'https://app.zippin.com.ar/shipments/'.$shipment_info['id'].'/download_documentation?format=pdf',
+                'url' => 'https://app.'.$zippin_domain['domain'].'/shipments/'.$shipment_info['id'].'/download_documentation?format=pdf',
                 'name' => 'Obtener documentación Zippin',
                 'action' => 'zippin-label',
             );
@@ -211,19 +216,24 @@ function activate_plugin()
         $version = '4.9';
 
     } else {
-        if (defined('ZIPPIN_APIKEY') && defined('ZIPPIN_SECRETKEY') && !empty('ZIPPIN_APIKEY') && !empty('ZIPPIN_SECRETKEY') && empty(get_option('zippin_api_key')) && empty(get_option('zippin_api_secret'))) {
+        if (defined('ZIPPIN_APIKEY') && defined('ZIPPIN_SECRETKEY')  && defined('ZIPPIN_DOMAIN')
+            && !empty('ZIPPIN_APIKEY') && !empty('ZIPPIN_SECRETKEY') && !empty('ZIPPIN_DOMAIN')
+            && empty(get_option('zippin_api_key')) && empty(get_option('zippin_api_secret'))  && empty(get_option('zippin_domain'))) {
+            // Get basic settings from constants instead of the database
             update_option('zippin_api_key', ZIPPIN_APIKEY);
             update_option('zippin_api_secret', ZIPPIN_SECRETKEY);
+            update_option('zippin_domain', ZIPPIN_DOMAIN);
         }
 
-        if (!empty(get_option('zippin_api_key')) && !empty(get_option('zippin_api_secret'))) {
+        if (!empty(get_option('zippin_api_key')) && !empty(get_option('zippin_api_secret')) && !empty(get_option('zippin_domain'))) {
+            // Check basic settings are complete
             update_option('zippin_credentials_check', true);
         }
 
         $delivery_zones = \WC_Shipping_Zones::get_zones();
 
         foreach ($delivery_zones as $zone_id => $zone_data ) {
-            if ($zone_data['zone_name'] == 'Argentina' ) {
+            if (in_array($zone_data['zone_name'], ['Argentina', 'Chile'] )) {
                 // Adding zippin to the first available zone
                 $zone = \WC_Shipping_Zones::get_zone($zone_id);
                 $methods = $zone->get_shipping_methods();
@@ -239,6 +249,10 @@ function activate_plugin()
         }
 
         // Create a new zone
+        // No lo hacemos mas. Si no existe una zona con nombre de pais dejamos al usuario que agregue el metodo de
+        // envio a la zona que desee.
+
+        /*
         $zone = new \WC_Shipping_Zone();
         if ($zone) {
             $zone->set_zone_name('Argentina');
@@ -246,6 +260,7 @@ function activate_plugin()
             $zone->add_shipping_method('zippin');
             $zone->save();
         }
+        */
         return;
     }
 
@@ -308,8 +323,8 @@ function add_plugin_column_links($links)
 function add_plugin_description_links($meta, $file, $data, $status)
 {
     if ($data['TextDomain'] == 'zippin_woocommerce') {
-        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.com.ar/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce') . '">Guía de configuración</a>';
-        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.com.ar/problemas-comunes-con-el-plugin-de-woocommerce') . '">Resolver problemas</a>';
+        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce') . '">Guía de configuración</a>';
+        $meta[] = '<a href="' . esc_url('https://ayuda.zippin.app/problemas-comunes-con-el-plugin-de-woocommerce') . '">Resolver problemas</a>';
     }
     return $meta;
 }
@@ -354,4 +369,17 @@ function handle_webhook()
     }
 
     die();
+}
+
+function add_missing_states($states)
+{
+
+    // Chile
+    if (get_option('zippin_domain')=='CL' && get_option('zippin_avoid_add_states')!=1) {
+        $states['CL'] = Helper::get_states('CL');
+    }
+
+    return $states;
+
+
 }

@@ -2,6 +2,7 @@
 
 namespace Zippin\Zippin\Settings;
 
+use Zippin\Zippin\Helper;
 use Zippin\Zippin\ZippinConnector;
 
 if (!defined('ABSPATH')) {
@@ -20,17 +21,9 @@ function init_settings()
     );
 
     add_settings_field(
-        'api_key',
-        'API v2 Account Key',
-        __NAMESPACE__ . '\print_api_key',
-        'zippin_settings',
-        'zippin_main_section'
-    );
-
-    add_settings_field(
-        'api_secret',
-        'API v2 Account Secret',
-        __NAMESPACE__ . '\print_api_secret',
+        'country',
+        'País de la cuenta',
+        __NAMESPACE__ . '\select_country',
         'zippin_settings',
         'zippin_main_section'
     );
@@ -43,6 +36,13 @@ function init_settings()
         'zippin_main_section'
     );
 
+    add_settings_field(
+        'api_key',
+        'Credenciales API v2 ',
+        __NAMESPACE__ . '\print_credentials',
+        'zippin_settings',
+        'zippin_main_section'
+    );
 
     add_settings_field(
         'origin_id',
@@ -137,25 +137,54 @@ function init_settings()
         'zippin_main_section'
     );
 
+    add_settings_field(
+        'advanced_feature_flags',
+        'Opciones avanzadas',
+        __NAMESPACE__ . '\advanced_feature_flags',
+        'zippin_settings',
+        'zippin_main_section'
+    );
+
 
 }
 
 
 function print_instructions()
 {
-    echo '<p>Para continuar deberás crear credenciales de API v2.</p><p>Deberás crear un nuevo <b>token de cuenta</b> desde la sección de <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a>.</p> ';
+    echo '<p>Para continuar deberás crear credenciales de API v2.</p><p>Deberás crear un nuevo <b>token de cuenta</b> desde la sección de Configuración &gt; Integraciones &gt; Credenciales y Webhooks.</p> ';
 }
 
-function print_api_key()
+function select_country()
 {
-    $previous_config = get_option('zippin_api_key');
-    echo '<input type="text" required name="api_key" value="' . ($previous_config ? $previous_config : '') . '" />';
+    $previous_config = get_option('zippin_domain');
+    echo '<select name="zippin_domain" required>';
+    echo '<option>Seleccionar un país</option>';
+    foreach (Helper::get_domains() as $id => $domain_data) {
+        if ($previous_config) {
+            echo '<option value="' . $id . '" ' . ($previous_config === $id ? 'selected' : '') . '>' . $domain_data['name'] . '</option>';
+        } else {
+            echo '<option value="' . $id . '">' . $domain_data['name'] . '</option>';
+        }
+    }
+    echo '</select>';
 }
 
-function print_api_secret()
+function advanced_feature_flags()
 {
-    $previous_config = get_option('zippin_api_secret');
-    echo '<input type="text" required name="api_secret" value="' . ($previous_config ? $previous_config : '') . '" />';
+    if (get_option('zippin_domain')=='CL') {
+        echo '<p style="margin-bottom: 16px"><label><input type="checkbox" name="zippin_avoid_add_states" value="1"' . (get_option('zippin_avoid_add_states') == 1 ? ' checked' : '') . '> Compatibilidad: Evitar agregar estados/regiones/provincias faltantes. <br><small>Activa esta opción si tienes otro plugin que también agregue los estados que WooCommerce no trae</small>.</label></p> ';
+    }
+    echo '<p style="margin-bottom: 16px"><label><b>Campo personalizado con el DNI/RUT del cliente</b><br><small>Si tienes algún plugin o personalización para capturar el número de documento del destinatario, indica aquí el código del campo personalizado de la orden.</small><br><input type="text" name="zippin_document_field" placeholder="Indica el código del campo personalizado" value="'.(get_option('zippin_document_field')).'"></label></p> ';
+}
+
+function print_credentials()
+{
+    $previous_key = get_option('zippin_api_key');
+    $previous_secret = get_option('zippin_api_secret');
+
+    echo '<p style="margin-bottom: 12px;"><small>API KEY</small><br><input type="text" required name="api_key" value="' . ($previous_key ? $previous_key : '') . '" /></p>';
+    echo '<p style="margin-bottom: 12px;"><small>API SECRET</small><br><input type="text" required name="api_secret" value="' . ($previous_secret ? $previous_secret : '') . '" /></p>';
+
 }
 
 function print_account_id()
@@ -168,10 +197,10 @@ function print_account_id()
         $connector = new ZippinConnector;
         $account = $connector->get_account();
         if ($account) {
-            echo '<div class="help-box success-text">Cuenta: <b>'.$account['name'].'</b></div>';
+            echo '<div class="help-box success-text">Cuenta conectada: <b>'.$account['name'].'</b></div>';
         } else {
             echo '<div class="help-box danger-text">Cuenta: <b>SIN AUTORIZACIÓN</b><br>
-                Verifica que las credenciales sean válidas y correspondan a la cuenta indicada.</div>';
+                Verifica que las credenciales sean válidas y correspondan a la cuenta indicada y el país correcto.</div>';
         }
     }
 
@@ -179,7 +208,7 @@ function print_account_id()
 
 function print_webhooks_instructions()
 {
-    echo '<div class="help-box warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a <a href="https://app.zippin.com.ar/myaccount/integrations/webhooks" target="_blank">Credenciales y Webhooks</a> y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
+    echo '<div class="help-box warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a a tu cuenta de Zippin y ve a Configuración &gt; Integraciones &gt; Credenciales y Webhooks, y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
     echo '<br>Configura tu webhook de la siguiente manera: <br>topic: <b>shipment</b> <br>URL: <strong>' . get_site_url(null, '?wc-api=zippin') . '</strong></div>';
 }
 
@@ -319,7 +348,14 @@ function settings_page_content()
         return;
     }
 
-	// Save api_key
+    // Save country
+    if (isset($_POST['zippin_domain'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_domain', sanitize_text_field($_POST['zippin_domain']));
+    }
+
+
+    // Save api_key
     if (isset($_POST['api_key'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
         update_option('zippin_api_key', sanitize_text_field($_POST['api_key']));
@@ -410,19 +446,33 @@ function settings_page_content()
         update_option('zippin_additional_charge_operation', sanitize_text_field($_POST['additional_charge_operation']));
     }
 
-
-
     if (isset($_POST['free_shipping_threshold'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
         update_option('zippin_free_shipping_threshold', filter_var($_POST['free_shipping_threshold'],FILTER_SANITIZE_NUMBER_FLOAT));
     }
 
+    if (isset($_POST['zippin_avoid_add_states'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_avoid_add_states', $_POST['free_shipping_threshold'] == '1' ? 1 : 0);
+    }
+
+    if (isset($_POST['zippin_document_field'])) {
+        wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
+        update_option('zippin_document_field', sanitize_text_field($_POST['zippin_document_field']));
+    }
 
     ?>
 
 	<div class="wrap">
-        <img src="<?=plugin_dir_url(__FILE__) ?>images/zippin.png" />
-		<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+        <img src="<?=plugin_dir_url(__FILE__) ?>images/zippin.png" height="50"/>
+        <div class="help-box info-text">
+            <b style="font-size: 14px">Ayuda</b><br>
+            <a target="_blank" href="https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce">Guía de configuración del plugin</a> |
+            <a target="_blank" href="https://ayuda.zippin.app/problemas-comunes-con-el-plugin-de-woocommerce">Resolver un problema</a> |
+            Versión actual del plugin: <?php echo ZIPPIN_VERSION; ?>
+        </div>
+
+        <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 		<form action="options-general.php?page=zippin_settings" method="post">
         <?php
         wp_enqueue_style('admin.css', plugin_dir_url(__FILE__) . 'css/admin.css', array(), ZIPPIN_VERSION);
