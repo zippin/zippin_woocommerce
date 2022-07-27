@@ -303,14 +303,25 @@ class Helper
     {
         $address = Helper::get_address($order);
 
-        $customer_document = '11111111';
-
-        if ($order->billing_dni_facturante) {
-            // Compatibilidad con facturante para obtener el DNI
+        // Compatibilidad con facturante para obtener el DNI
+        if (!empty($order->billing_dni_facturante)) {
             $customer_document = $order->billing_dni_facturante;
+        }
 
-        } elseif ($document_field = get_option('zippin_document_field')) {
-            $customer_document = $order->$document_field;
+        // Compatibilidad con Contabilium para obtener el documento
+        $contabilium_document = get_user_meta( $order->get_user_id(), 'cb_document_number', true );
+        if (!empty($contabilium_document)) {
+            $customer_document = $contabilium_document;
+        }
+
+        // Si esta definido en el plugin, usar el campo personalizado de la orden
+        $zippin_document_field = get_option('zippin_document_field');
+        if (!empty($order->$zippin_document_field)) {
+            $customer_document = $order->$zippin_document_field;
+        }
+
+        if (!empty($customer_document)) {
+            $customer_document = '11111111';
         }
 
         if ($order->has_shipping_address()) {
