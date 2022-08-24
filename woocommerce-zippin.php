@@ -24,7 +24,7 @@ define('ZIPPIN_DOMAIN', '');
 
 
 define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
-define('ZIPPIN_VERSION', '2.1');
+define('ZIPPIN_VERSION', '2.2');
 
 
 register_activation_hook(__FILE__, 'Zippin\Zippin\Utils\activate_plugin');
