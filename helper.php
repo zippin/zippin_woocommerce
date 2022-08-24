@@ -320,7 +320,7 @@ class Helper
             $customer_document = $order->$zippin_document_field;
         }
 
-        if (!empty($customer_document)) {
+        if (empty($customer_document)) {
             $customer_document = '11111111';
         }
 
