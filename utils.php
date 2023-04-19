@@ -233,7 +233,7 @@ function activate_plugin()
         $delivery_zones = \WC_Shipping_Zones::get_zones();
 
         foreach ($delivery_zones as $zone_id => $zone_data ) {
-            if (in_array($zone_data['zone_name'], ['Argentina', 'Chile'] )) {
+            if (in_array($zone_data['zone_name'], ['Argentina', 'Chile', 'México', 'Mexico'] )) {
                 // Adding zippin to the first available zone
                 $zone = \WC_Shipping_Zones::get_zone($zone_id);
                 $methods = $zone->get_shipping_methods();
@@ -248,19 +248,6 @@ function activate_plugin()
             }
         }
 
-        // Create a new zone
-        // No lo hacemos mas. Si no existe una zona con nombre de pais dejamos al usuario que agregue el metodo de
-        // envio a la zona que desee.
-
-        /*
-        $zone = new \WC_Shipping_Zone();
-        if ($zone) {
-            $zone->set_zone_name('Argentina');
-            $zone->set_locations(Helper::get_shipping_zone_regions());
-            $zone->add_shipping_method('zippin');
-            $zone->save();
-        }
-        */
         return;
     }
 
