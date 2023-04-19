@@ -3,7 +3,7 @@
  * Plugin Name: Envíos con Zippin para Woocommerce
  * Plugin URI: https://zippin-plugins.s3.amazonaws.com/woocommerce/zippin_woocommerce.zip
  * Description: Integra WooCommerce con Zippin para realizar envíos con múltiples transportes a todo el país.
- * Version: 2.1
+ * Version: 2.3
  * Author: Zippin
  * Author URI: https://www.zippin.app/
  * Requires PHP: 7
@@ -24,7 +24,7 @@ define('ZIPPIN_DOMAIN', '');
 
 
 define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
-define('ZIPPIN_VERSION', '2.2');
+define('ZIPPIN_VERSION', '2.3');
 
 
 register_activation_hook(__FILE__, 'Zippin\Zippin\Utils\activate_plugin');
@@ -44,7 +44,7 @@ add_filter('ngettext', 'zippin_translate_words_array', 20, 3);
 function zippin_translate_words_array($translation, $text, $domain)
 {
     if ($text === 'Enter your address to view shipping options.') {
-        $translation = 'Ingresá tu dirección para conocer los costos de envio';
+        $translation = 'Ingresa tu dirección para conocer los costos de envío';
     }
     return $translation;
 }

@@ -41,8 +41,9 @@ class Helper
     public static function get_domains($domain = null)
     {
         $domains = [
-            'AR' => ['country' => 'AR', 'name' => 'Argentina', 'domain'=>'zippin.com.ar', 'use_zipcode'=>true, 'zipcode_length'=>4],
-            'CL' => ['country' => 'CL', 'name' => 'Chile', 'domain'=>'zippin.cl', 'use_zipcode'=>false, 'zipcode_length'=>7],
+            'AR' => ['country' => 'AR', 'name' => 'Argentina', 'domain'=>'zippin.com.ar', 'use_zipcode' => true, 'zipcode_length' => 4],
+            'CL' => ['country' => 'CL', 'name' => 'Chile', 'domain'=>'zippin.cl', 'use_zipcode' => false, 'zipcode_length' => 7],
+            'MX' => ['country' => 'MX', 'name' => 'México', 'domain'=>'zippin.com.mx', 'use_zipcode' => true, 'zipcode_length' => 5],
         ];
 
         if ($domain) {
@@ -66,33 +67,8 @@ class Helper
     {
         $current_domain = self::get_current_domain();
 
-        if ($current_domain['country'] == 'AR') {
-            $states = [
-                'C' => 'Capital Federal',
-                'B' => 'Buenos Aires',
-                'K' => 'Catamarca',
-                'H' => 'Chaco',
-                'U' => 'Chubut',
-                'X' => 'Cordoba',
-                'W' => 'Corrientes',
-                'E' => 'Entre Rios',
-                'P' => 'Formosa',
-                'Y' => 'Jujuy',
-                'L' => 'La Pampa',
-                'F' => 'La Rioja',
-                'M' => 'Mendoza',
-                'N' => 'Misiones',
-                'Q' => 'Neuquen',
-                'R' => 'Rio Negro',
-                'A' => 'Salta',
-                'J' => 'San Juan',
-                'D' => 'San Luis',
-                'Z' => 'Santa Cruz',
-                'S' => 'Santa Fe',
-                'G' => 'Santiago del Estero',
-                'V' => 'Tierra del Fuego',
-                'T' => 'Tucuman',
-            ];
+        if (in_array($current_domain['country'], ['AR','MX'])) {
+            $states = Helper::get_states($current_domain['country']);
 
             if (isset($states[$state_id])) {
                 return $states[$state_id];
@@ -111,36 +87,6 @@ class Helper
         }
 
         return null;
-    }
-
-    public static function get_shipping_zone_regions()
-    {
-        $regions = array();
-        $regions[] = array('code' => 'AR:C', 'type' => 'state');
-        $regions[] = array('code' => 'AR:B', 'type' => 'state');
-        $regions[] = array('code' => 'AR:K', 'type' => 'state');
-        $regions[] = array('code' => 'AR:H', 'type' => 'state');
-        $regions[] = array('code' => 'AR:U', 'type' => 'state');
-        $regions[] = array('code' => 'AR:X', 'type' => 'state');
-        $regions[] = array('code' => 'AR:W', 'type' => 'state');
-        $regions[] = array('code' => 'AR:E', 'type' => 'state');
-        $regions[] = array('code' => 'AR:P', 'type' => 'state');
-        $regions[] = array('code' => 'AR:Y', 'type' => 'state');
-        $regions[] = array('code' => 'AR:L', 'type' => 'state');
-        $regions[] = array('code' => 'AR:F', 'type' => 'state');
-        $regions[] = array('code' => 'AR:M', 'type' => 'state');
-        $regions[] = array('code' => 'AR:N', 'type' => 'state');
-        $regions[] = array('code' => 'AR:Q', 'type' => 'state');
-        $regions[] = array('code' => 'AR:R', 'type' => 'state');
-        $regions[] = array('code' => 'AR:A', 'type' => 'state');
-        $regions[] = array('code' => 'AR:J', 'type' => 'state');
-        $regions[] = array('code' => 'AR:D', 'type' => 'state');
-        $regions[] = array('code' => 'AR:Z', 'type' => 'state');
-        $regions[] = array('code' => 'AR:S', 'type' => 'state');
-        $regions[] = array('code' => 'AR:G', 'type' => 'state');
-        $regions[] = array('code' => 'AR:V', 'type' => 'state');
-        $regions[] = array('code' => 'AR:T', 'type' => 'state');
-        return $regions;
     }
 
 
@@ -246,7 +192,7 @@ class Helper
                 continue;
             }
             if (!$product) {
-                $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $this->logger->error('Zippin Helper: Error obteniendo productos del carrito. El producto '.$product_id.' no tiene peso o dimensiones definidas, lo cual es obligatorio.', unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
             for ($i = 0; $i < $item['quantity']; $i++) {
@@ -508,6 +454,32 @@ class Helper
 
     public static function get_states($cc = null) {
         $states = [
+            'AR' => [
+                'C' => 'Capital Federal',
+                'B' => 'Buenos Aires',
+                'K' => 'Catamarca',
+                'H' => 'Chaco',
+                'U' => 'Chubut',
+                'X' => 'Cordoba',
+                'W' => 'Corrientes',
+                'E' => 'Entre Rios',
+                'P' => 'Formosa',
+                'Y' => 'Jujuy',
+                'L' => 'La Pampa',
+                'F' => 'La Rioja',
+                'M' => 'Mendoza',
+                'N' => 'Misiones',
+                'Q' => 'Neuquen',
+                'R' => 'Rio Negro',
+                'A' => 'Salta',
+                'J' => 'San Juan',
+                'D' => 'San Luis',
+                'Z' => 'Santa Cruz',
+                'S' => 'Santa Fe',
+                'G' => 'Santiago del Estero',
+                'V' => 'Tierra del Fuego',
+                'T' => 'Tucuman',
+            ],
             'CL' => [
                 'RM' => 'RM (Metropolitana)',
                 'AI' => 'Aysén',
@@ -525,6 +497,40 @@ class Helper
                 'TA' => 'Tarapacá',
                 'VS' => 'Valparaíso',
                 'NB' => 'Ñuble',
+            ],
+            'MX' => [
+                'DF' => 'Distrito Federal',
+                'JA' => 'Jalisco',
+                'NL' => 'Nuevo León',
+                'AG' => 'Aguascalientes',
+                'BC' => 'Baja California',
+                'BS' => 'Baja California Sur',
+                'CM' => 'Campeche',
+                'CS' => 'Chiapas',
+                'CH' => 'Chihuahua',
+                'CO' => 'Coahuila',
+                'CL' => 'Colima',
+                'DG' => 'Durango',
+                'GT' => 'Guanajuato',
+                'GR' => 'Guerrero',
+                'HG' => 'Hidalgo',
+                'MX' => 'Estado de México',
+                'MI' => 'Michoacán',
+                'MO' => 'Morelos',
+                'NA' => 'Nayarit',
+                'OA' => 'Oaxaca',
+                'PU' => 'Puebla',
+                'QT' => 'Querétaro',
+                'QR' => 'Quintana Roo',
+                'SL' => 'San Luis Potosí',
+                'SI' => 'Sinaloa',
+                'SO' => 'Sonora',
+                'TB' => 'Tabasco',
+                'TM' => 'Tamaulipas',
+                'TL' => 'Tlaxcala',
+                'VE' => 'Veracruz',
+                'YU' => 'Yucatán',
+                'ZA' => 'Zacatecas',
             ]
         ];
 
