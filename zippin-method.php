@@ -64,17 +64,24 @@ function zippin_init()
                 // Prepare packages
                 $products = $this->get_products_from_cart();
 
+                if (!$products) {
+                    // No shippable products to quote
+                    return;
+                }
+
                 // Create destination object
                 $billing_address = [
                     'city' => WC()->customer->get_billing_city(),
                     'state' => WC()->customer->get_billing_state(),
-                    'zipcode' => WC()->customer->get_billing_postcode()
+                    'zipcode' => WC()->customer->get_billing_postcode(),
+                    'country' => WC()->customer->get_billing_country()
                 ];
 
                 $shipping_address = [
                     'city' => WC()->customer->get_shipping_city(),
                     'state' => WC()->customer->get_shipping_state(),
-                    'zipcode' => WC()->customer->get_shipping_postcode()
+                    'zipcode' => WC()->customer->get_shipping_postcode(),
+                    'country' => WC()->customer->get_shipping_country()
                 ];
 
                 $this->logger->debug('Quote Log - billing: '.wc_print_r(json_encode($billing_address), true).' - shipping: '.wc_print_r(json_encode($shipping_address), true), unserialize(ZIPPIN_LOGGER_CONTEXT));
@@ -86,6 +93,9 @@ function zippin_init()
                 }
 
                 $destination['zipcode'] = filter_var($destination['zipcode'], FILTER_SANITIZE_NUMBER_INT);
+                if ($destination['country'] == 'CL') {
+                    unset($destination['zipcode']);
+                }
                 $destination['state'] = Helper::get_state_name($destination['state']);
 
                 // Get declared value
@@ -167,7 +177,6 @@ function zippin_init()
                             $i=1;
                             foreach ($result['result']['pickup_points'] as $point) {
                                 if ($i>3) { continue; }
-                                //echo wc_print_r($result['result'],1);
                                 $address = $point['location']['street'].' '.$point['location']['street_number'].', '.$point['location']['city'];
                                 $rate = array(
                                     'id' => 'zippin|' . (isset($result['code']) ? $result['code'] : '').'|'.$point['point_id'],
@@ -190,10 +199,6 @@ function zippin_init()
 
                             $this->add_rate($rate);
                         }
-
-
-
-
                     }
                 }
             }
@@ -201,8 +206,7 @@ function zippin_init()
             public function get_products_from_cart()
             {
                 $helper = new Helper();
-                $products = $helper->get_items_from_cart();
-                return $products;
+                return $helper->get_items_from_cart();
             }
 
             private function localize_date(\DateTime $datetime, \DateInterval $diff_to_now)

@@ -5,12 +5,12 @@ Tags: envios, zippin, shipping, woocommerce
 Requires at least: 4.6
 Tested up to: 5.4.2
 Requires PHP: 7
-Stable tag: 2.3
+Stable tag: 2.4
 Language: Spanish
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Conecta tu tienda Woocommerce con Zippin para realizar envíos en Argentina y Chile.
+Conecta tu tienda Woocommerce con Zippin para realizar envíos en Argentina, Chile y México.
 
 == Description ==
 
@@ -25,6 +25,8 @@ La integración te permitirá:
 * Habilita una página de tracking para que tus compradores sepan el estado del envío.
 
 == Installation ==
+
+Revisa nuestra guía para instrucciones más detalladas: https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce
 
 1. Instalar el plugin directamente a través de WordPress. Alternativamente, se pueden subir todos los archivos del plugin a la carpeta `/wp-content/plugins/woocommerce-zippin`.
 2. Activar el plugin en WordPress desde la sección Plugins.
@@ -41,7 +43,7 @@ Si, deberás tener una cuenta activa y configurada. Puedes crear una cuenta en h
 El uso del plugin es gratuito. Solo pagarás por los envíos que realices.
 
 = ¿En donde se puede usar Zippin? =
-Por el momento solo podrás hacer envíos en Argentina y Chile.
+Podrás hacer envíos con transportes de Argentina, Chile y México.
 
 
 == Screenshots ==
@@ -57,53 +59,59 @@ Por el momento solo podrás hacer envíos en Argentina y Chile.
 
 == Changelog ==
 
-= 2.3 =
+= 2.4 (2024-09-26) =
+Added HPOS compatibility
+Fixed bug with virtual products
+Fixes bug with regions compatibility setting in CL
+Fixes bug with zipcodes in CL
+
+= 2.3 (2023-04-19) =
 Added Mexico support
 
-= 2.2 =
+= 2.2 (2022-08-24) =
 Bug Fixes
 
-= 2.1 =
+= 2.1 (2022-07-27) =
 Bug Fixes
 Added compatibility with Contabilium plugin
 
-= 2.0 =
+= 2.0 (2022-05-30) =
 Support for Chile
 Option to set a customer document custom field
 Bug fixing
 
-= 1.7 =
+= 1.7 (2021-09-09) =
 Support for express delivery
 Added compatibility with Facturante plugin
 Performance improvements
 Bug fixing
 
-= 1.6 =
+= 1.6 (2020-10-07) =
 Support for pickup points delivery
 Performance improvements
 Bug fixing
 
-= 1.5 =
+= 1.5 (2020-08-18) =
 Bug fixing
 
-= 1.4 =
+= 1.4 (2020-06-18) =
 Change grouping mode to use new api functionality
 
-= 1.3 =
+= 1.3 (2020-06-03) =
 Add free shipping threshold
 Add field Additional Charge
 Change Rol Access
 Change Menu Page
 Bug fixes and minor improvements
 
-= 1.2 =
+= 1.2 (2020-05-19) =
 Compatibilidad con atributo logistic type
 Bugfixing
 
-= 1.1 =
+= 1.1 (2019-06-24) =
 Bugfixing
 
-= 1.0 =
+= 1.0 (2019-05-31) =
 Primer versión. Permite conectar la cuenta, cotizar y crear envíos.
 
 

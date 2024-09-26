@@ -24,7 +24,6 @@ function update_order_meta($order_id)
     $chosen_shipping_method = reset($chosen_shipping_method);
     $chosen_shipping_method = explode("|", $chosen_shipping_method);
     $chosen_shipping_method[0] = explode(":", $chosen_shipping_method[0])[0];
-    wc_get_logger()->info(print_r($chosen_shipping_method,1));
 
     if ($chosen_shipping_method[0] === 'zippin' || ($chosen_shipping_method[0]=='free_shipping' && get_option('zippin_create_free_shipments') == 'yes')) {
         // Save shipment preferences (carrier and service)
@@ -67,6 +66,12 @@ function update_order_meta($order_id)
 function process_order_status($order_id, $old_status, $new_status)
 {
     $order = wc_get_order($order_id);
+
+    if (WC()->session && !$order->get_meta('zippin_shipping_info', true)) {
+        update_order_meta($order_id);
+        $order = wc_get_order($order_id);
+    }
+
     $order_shipping_methods = $order->get_items('shipping');
     $order_shipping_method = reset($order_shipping_methods);
     $shipment_creation_trigger_status = get_option('zippin_shipping_status');
@@ -106,36 +111,29 @@ function process_order_status($order_id, $old_status, $new_status)
 
 function add_order_side_box()
 {
-    global $post;
-    $order = wc_get_order($post->ID);
-    if (!$order) {
-        return false;
-    }
+    $screen = class_exists( '\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController' ) && wc_get_container()->get( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()
+        ? wc_get_page_screen_id( 'shop-order' )
+        : 'shop_order';
 
-    $order_shipping_methods = $order->get_shipping_methods();
-    $chosen_shipping_method = reset($order_shipping_methods);
-    if (!$chosen_shipping_method) {
-        return false;
-    }
-    $chosen_shipping_method_id = $chosen_shipping_method->get_method_id();
-    $chosen_shipping_method = explode("|", $chosen_shipping_method_id);
-    $shipping_info = $order->get_meta('zippin_shipping_info', true);
+    add_meta_box(
+        'zippin_box',
+        '<img src="'.plugin_dir_url(__FILE__) . 'images/zippin.png" title="Zippin" style="height: 20px">',
+        __NAMESPACE__ . '\box_content',
+        $screen,
+        'side'
+    );
 
-    if ($chosen_shipping_method[0] === 'zippin' || strlen($shipping_info)>0) {
-        add_meta_box(
-            'zippin_box',
-            '<img src="'.plugin_dir_url(__FILE__) . 'images/zippin.png" title="Zippin" style="height: 20px">',
-            __NAMESPACE__ . '\box_content',
-            'shop_order',
-            'side'
-        );
-    }
 }
 
-function box_content()
+function box_content($post_or_order_object)
 {
-    global $post;
-    $order = wc_get_order($post->ID);
+    $order = ( $post_or_order_object instanceof \WP_Post ) ? wc_get_order( $post_or_order_object->ID ) : $post_or_order_object;
+
+    if ( ! $order->get_meta('zippin_shipping_info', true)) {
+        echo 'Para esta orden no se ha elegido Zippin como método de envío.';
+        return true;
+    }
+
     $shipment = $order->get_meta('zippin_shipment', true);
 
     if (empty($shipment) || $shipment == 'b:0;') {
@@ -148,7 +146,8 @@ function box_content()
 
     $shipment = unserialize($shipment);
     $zippin_domain = Helper::get_current_domain();
-    echo '<h4><a target="_blank" href="https://app.'.$zippin_domain['domain'].'/shipments/'.$shipment['id'].'">Envío '.$shipment['external_id'].' ('.$shipment['id'].')</a></h4>';
+    $detail_url = 'https://app.'.$zippin_domain['domain'].'/shipments/'.$shipment['id'];
+    echo '<h4><a target="_blank" href="'.$detail_url.'">Envío '.$shipment['external_id'].' ('.$shipment['id'].')</a></h4>';
     echo '<p>Estado: <b>'.$shipment['status_name'].'</b></p>';
     if (!empty($shipment['carrier']['logo'])) {
         echo '<p><img style="max-height: 40px; max-width: 100%" src="'.$shipment['carrier']['logo'].'" title="'.$shipment['carrier']['name'].'">';
@@ -166,7 +165,7 @@ function box_content()
     if (in_array($shipment['status'],['documentation_ready','ready_to_ship'])) {
         echo '<a class="button button-primary" target="_blank" href="https://app.'.$zippin_domain['domain'].'/shipments/' . $shipment['id'] . '/download_documentation?format=pdf">Descargar Etiquetas</a>';
     }
-    echo ' <a class="button" target="_blank" href="'.$shipment['tracking'].'">Ver Tracking</a></p>';
+    echo '<a class="button" target="_blank" href="'.$detail_url.'">Ver Detalle</a> <a class="button" target="_blank" href="'.$shipment['tracking'].'">Ver Tracking</a></p>';
 
 }
 

@@ -75,8 +75,13 @@ class Helper
             }
 
         } elseif ($current_domain['country'] == 'CL') {
+            $states = Helper::get_states('CL');
+
+            if (str_starts_with($state_id, 'CL-')) {
+                $state_id = substr($state_id, 3);
+            }
+
             if (strlen($state_id) == 2) {
-                $states = Helper::get_states('CL');
                 if (isset($states[$state_id])) {
                     return $states[$state_id];
                 }
@@ -282,6 +287,7 @@ class Helper
                 'zipcode' => $order->get_shipping_postcode(),
                 'phone' => $order->get_billing_phone(),
                 'email' => $order->get_billing_email(),
+                'country' => $order->get_shipping_country(),
             );
 
         } else {
@@ -296,6 +302,7 @@ class Helper
                 'zipcode' => $order->get_billing_postcode(),
                 'phone' => $order->get_billing_phone(),
                 'email' => $order->get_billing_email(),
+                'country' => $order->get_billing_country(),
             );
 
         }
