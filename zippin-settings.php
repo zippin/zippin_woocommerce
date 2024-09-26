@@ -453,7 +453,7 @@ function settings_page_content()
 
     if (isset($_POST['zippin_avoid_add_states'])) {
         wp_verify_nonce($_REQUEST['zippin_wpnonce'], 'zippin_settings_save' );
-        update_option('zippin_avoid_add_states', $_POST['free_shipping_threshold'] == '1' ? 1 : 0);
+        update_option('zippin_avoid_add_states', $_POST['zippin_avoid_add_states'] == '1' ? 1 : 0);
     }
 
     if (isset($_POST['zippin_document_field'])) {

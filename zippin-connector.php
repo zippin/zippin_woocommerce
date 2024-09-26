@@ -81,6 +81,9 @@ class ZippinConnector
 
         // Create destination object
         $destination = $helper->get_destination_from_order($order);
+        if ($destination['country'] == 'CL') {
+            unset($destination['zipcode']);
+        }
 
         $declared_value_modifier = get_option('zippin_insurance_modifier', 100)/100;
         $declared_value = max(0, $order->get_subtotal() * $declared_value_modifier);
@@ -300,7 +303,7 @@ class ZippinConnector
             $url = 'https://api.'.$zippin_domain['domain'].'/v2' . $endpoint;
             $args = array(
                 'headers' => $headers,
-                'timeout' => 15
+                'timeout' => 25
             );
 
             if ($method === 'GET') {

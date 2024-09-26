@@ -1,16 +1,16 @@
 <?php
 /*
  * Plugin Name: Envíos con Zippin para Woocommerce
- * Plugin URI: https://zippin-plugins.s3.amazonaws.com/woocommerce/zippin_woocommerce.zip
+ * Plugin URI: https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce
  * Description: Integra WooCommerce con Zippin para realizar envíos con múltiples transportes a todo el país.
- * Version: 2.3
+ * Version: 2.4
  * Author: Zippin
  * Author URI: https://www.zippin.app/
  * Requires PHP: 7
  * License: GPL2
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least: 4.0.0
- * WC tested up to: 5.6.0
+ * WC tested up to: 9.3.3
  * Text Domain: zippin_woocommerce
  */
 
@@ -24,7 +24,14 @@ define('ZIPPIN_DOMAIN', '');
 
 
 define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
-define('ZIPPIN_VERSION', '2.3');
+define('ZIPPIN_VERSION', '2.4');
+
+// Setting plugin as HPOS compatible
+add_action( 'before_woocommerce_init', function() {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+    }
+} );
 
 
 register_activation_hook(__FILE__, 'Zippin\Zippin\Utils\activate_plugin');
