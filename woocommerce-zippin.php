@@ -1,11 +1,11 @@
 <?php
 /*
- * Plugin Name: Envíos con Zippin para Woocommerce
- * Plugin URI: https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce
- * Description: Integra WooCommerce con Zippin para realizar envíos con múltiples transportes a todo el país.
- * Version: 2.4
- * Author: Zippin
- * Author URI: https://www.zippin.app/
+ * Plugin Name: Envíos con Zipnova para Woocommerce
+ * Plugin URI: https://www.zipnova.com/productos/envios/integraciones/woocommerce
+ * Description: Integra WooCommerce con Zipnova para realizar envíos con múltiples transportes a todo el país.
+ * Version: 2.5
+ * Author: Zipnova
+ * Author URI: https://www.zipnova.com/
  * Requires PHP: 7
  * License: GPL2
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
@@ -24,7 +24,7 @@ define('ZIPPIN_DOMAIN', '');
 
 
 define('ZIPPIN_LOGGER_CONTEXT', serialize(array('source' => 'zippin')));
-define('ZIPPIN_VERSION', '2.4');
+define('ZIPPIN_VERSION', '2.5');
 
 // Setting plugin as HPOS compatible
 add_action( 'before_woocommerce_init', function() {

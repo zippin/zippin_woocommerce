@@ -41,9 +41,9 @@ class Helper
     public static function get_domains($domain = null)
     {
         $domains = [
-            'AR' => ['country' => 'AR', 'name' => 'Argentina', 'domain'=>'zippin.com.ar', 'use_zipcode' => true, 'zipcode_length' => 4],
-            'CL' => ['country' => 'CL', 'name' => 'Chile', 'domain'=>'zippin.cl', 'use_zipcode' => false, 'zipcode_length' => 7],
-            'MX' => ['country' => 'MX', 'name' => 'México', 'domain'=>'zippin.com.mx', 'use_zipcode' => true, 'zipcode_length' => 5],
+            'AR' => ['country' => 'AR', 'name' => 'Argentina', 'domain'=>'zipnova.com.ar', 'use_zipcode' => true, 'zipcode_length' => 4],
+            'CL' => ['country' => 'CL', 'name' => 'Chile', 'domain'=>'zipnova.cl', 'use_zipcode' => false, 'zipcode_length' => 7],
+            'MX' => ['country' => 'MX', 'name' => 'México', 'domain'=>'zipnova.com.mx', 'use_zipcode' => true, 'zipcode_length' => 5],
         ];
 
         if ($domain) {
@@ -197,7 +197,7 @@ class Helper
                 continue;
             }
             if (!$product) {
-                $this->logger->error('Zippin Helper: Error obteniendo productos del carrito. El producto '.$product_id.' no tiene peso o dimensiones definidas, lo cual es obligatorio.', unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $this->logger->error('Zipnova Helper: Error obteniendo productos del carrito. El producto '.$product_id.' no tiene peso o dimensiones definidas, lo cual es obligatorio.', unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
             for ($i = 0; $i < $item['quantity']; $i++) {
@@ -208,7 +208,7 @@ class Helper
         $packages = $this->get_packages_from_products($products);
 
         if (!$packages) {
-            $this->logger->error('Zippin Helper: Error obteniendo productos del carrito, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zipnova Helper: Error obteniendo productos del carrito, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 
@@ -232,7 +232,7 @@ class Helper
                 continue;
             }
             if (!$product) {
-                $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
+                $this->logger->error('Zipnova Helper: Error obteniendo productos de la orden, producto con malas dimensiones - ID: ' . $product_id, unserialize(ZIPPIN_LOGGER_CONTEXT));
                 return false;
             }
             for ($i = 0; $i < $item->get_quantity(); $i++) {
@@ -242,7 +242,7 @@ class Helper
 
         $packages = $this->get_packages_from_products($products);
         if (!$packages) {
-            $this->logger->error('Zippin Helper: Error obteniendo productos de la orden, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
+            $this->logger->error('Zipnova Helper: Error obteniendo productos de la orden, productos con malas dimensiones/peso', unserialize(ZIPPIN_LOGGER_CONTEXT));
             return false;
         }
 

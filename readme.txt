@@ -1,48 +1,48 @@
-=== Envios con Zippin en Woocommerce ===
+=== Envios con Zipnova en Woocommerce ===
 Contributors: zippindevelopers
-Donate link: https://www.zippin.app/
-Tags: envios, zippin, shipping, woocommerce
+Donate link: https://www.zipnova.com/
+Tags: envios, zipnova, zippin, shipping, woocommerce
 Requires at least: 4.6
-Tested up to: 5.4.2
+Tested up to: 6.7.2
 Requires PHP: 7
-Stable tag: 2.4
+Stable tag: 2.5
 Language: Spanish
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Conecta tu tienda Woocommerce con Zippin para realizar envíos en Argentina, Chile y México.
+Conecta tu tienda Woocommerce con Zipnova para realizar envíos en Argentina, Chile y México.
 
 == Description ==
 
-Conecta tu tienda Woocommerce con Zippin para realizar envíos a todo el país.
-Zippin es una solución para realizar envíos de productos de cualquier tamaño con múltiples operadores logísticos, desde una única plataforma donde gestionarlos.
-Este plugin para Woocommerce te permitirá crear envíos en múltiples transportes con una sola integración, a través de Zippin.
+Conecta tu tienda Woocommerce con Zipnova para realizar envíos a todo el país.
+Zipnova es una solución para realizar envíos de productos de cualquier tamaño con múltiples operadores logísticos, desde una única plataforma donde gestionarlos.
+Este plugin para Woocommerce te permitirá crear envíos en múltiples transportes con una sola integración, a través de Zipnova.
 
 La integración te permitirá:
 * Que tus compradores puedan cotizar el costo de envío desde el carrito, con resultados de múltiples transportes, y elegir el de su conveniencia.
-* Cuando se cree una orden, se creará en Zippin un envío en forma automática (cuando la orden alcance el estado que definas).
+* Cuando se cree una orden, se creará en Zipnova un envío en forma automática (cuando la orden alcance el estado que definas).
 * Podrás verificar el estado del envío y descargar la etiqueta y la guía del envío desde el detalle de la orden.
 * Habilita una página de tracking para que tus compradores sepan el estado del envío.
 
 == Installation ==
 
-Revisa nuestra guía para instrucciones más detalladas: https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce
+Revisa nuestra guía para instrucciones más detalladas: https://ayuda.zipnova.com/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce
 
 1. Instalar el plugin directamente a través de WordPress. Alternativamente, se pueden subir todos los archivos del plugin a la carpeta `/wp-content/plugins/woocommerce-zippin`.
 2. Activar el plugin en WordPress desde la sección Plugins.
-3. Configurar el plugin desde Ajustes > Configuración de Zippin
-4. Configurar los tipos de servicio en la configuración de Envíos y Zonas de Woocommerce (Woocommerce > Settings > Shipping > [Nombre de la zona] > Envío con Zippin)
+3. Configurar el plugin desde Ajustes > Configuración de Zipnova
+4. Configurar los tipos de servicio en la configuración de Envíos y Zonas de Woocommerce (Woocommerce > Settings > Shipping > [Nombre de la zona] > Envío con Zipnova/Zippin)
 
 
 == Frequently Asked Questions ==
 
-= ¿Es necesario tener una cuenta en Zippin? =
-Si, deberás tener una cuenta activa y configurada. Puedes crear una cuenta en https://www.zippin.app
+= ¿Es necesario tener una cuenta en Zipnova? =
+Si, deberás tener una cuenta activa y configurada. Puedes crear una cuenta en https://www.zipnova.com
 
 = ¿Tiene algun costo usar el plugin? =
 El uso del plugin es gratuito. Solo pagarás por los envíos que realices.
 
-= ¿En donde se puede usar Zippin? =
+= ¿En donde se puede usar Zipnova? =
 Podrás hacer envíos con transportes de Argentina, Chile y México.
 
 
@@ -58,6 +58,11 @@ Podrás hacer envíos con transportes de Argentina, Chile y México.
 
 
 == Changelog ==
+
+= 2.5 (2025-04-04) =
+Applied rebranding and renaming of Zippin to Zipnova
+Improvements on the tracking page
+
 
 = 2.4 (2024-09-26) =
 Added HPOS compatibility
