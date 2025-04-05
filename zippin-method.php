@@ -20,9 +20,9 @@ function zippin_init()
             public function __construct($instance_id = 0)
             {
                 $this->id = 'zippin';
-                $this->method_title = 'Zippin';
-                $this->method_description = 'Envíos con Zippin';
-                $this->title = 'Envío con Zippin';
+                $this->method_title = 'Zipnova';
+                $this->method_description = 'Envíos con Zipnova';
+                $this->title = 'Envío con Zipnova';
                 $this->instance_id = absint($instance_id);
                 $this->supports = array(
                     'shipping-zones',

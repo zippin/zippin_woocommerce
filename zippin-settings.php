@@ -73,7 +73,7 @@ function init_settings()
 
     add_settings_field(
         'default_shipping_status',
-        'Estado de pedido para crear en Zippin',
+        'Estado de pedido para crear en Zipnova',
         __NAMESPACE__ . '\print_default_shipping_status',
         'zippin_settings',
         'zippin_main_section'
@@ -81,7 +81,7 @@ function init_settings()
 
     add_settings_field(
         'enable_free_shipping_creation',
-        'Crear los envíos gratuitos con Zippin',
+        'Crear los envíos gratuitos con Zipnova',
         __NAMESPACE__ . '\print_free_shipping_creation',
         'zippin_settings',
         'zippin_main_section'
@@ -114,7 +114,7 @@ function init_settings()
 
     add_settings_field(
         'webhook_instructions',
-        'Sincronización entre Zippin y WooCommerce',
+        'Sincronización entre Zipnova y WooCommerce',
         __NAMESPACE__ . '\print_webhooks_instructions',
         'zippin_settings',
         'zippin_main_section'
@@ -208,13 +208,13 @@ function print_account_id()
 
 function print_webhooks_instructions()
 {
-    echo '<div class="help-box warning-text">Para mantener WooCommerce sincronizado con Zippin es necesario configurar un webhook. Ingresa a a tu cuenta de Zippin y ve a Configuración &gt; Integraciones &gt; Credenciales y Webhooks, y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
+    echo '<div class="help-box warning-text">Para mantener WooCommerce sincronizado con Zipnova es necesario configurar un webhook. Ingresa a a tu cuenta de Zipnova y ve a Configuración &gt; Integraciones &gt; Credenciales y Webhooks, y a la derecha, en Webhooks, ve a crear un nuevo webhook.';
     echo '<br>Configura tu webhook de la siguiente manera: <br>topic: <b>shipment</b> <br>URL: <strong>' . get_site_url(null, '?wc-api=zippin') . '</strong></div>';
 }
 
 function print_servicetype_instructions()
 {
-    echo '<div class="help-box warning-text">Para gestionar los tipos de servicio habilitados ingresa a los <a href="admin.php?page=wc-settings&tab=shipping" target="_blank">ajustes de envío de WooCommerce</a>, ingresa a la zona que quieras modificar, y en el metodo de envío <b>Envío con Zippin</b> (clic en Editar) selecciona los tipos de servicio que quieras habilitar.</div>';
+    echo '<div class="help-box warning-text">Para gestionar los tipos de servicio habilitados ingresa a los <a href="admin.php?page=wc-settings&tab=shipping" target="_blank">ajustes de envío de WooCommerce</a>, ingresa a la zona que quieras modificar, y en el metodo de envío <b>Envío con Zipnova</b> (o Zippin) (clic en Editar) selecciona los tipos de servicio que quieras habilitar.</div>';
 }
 
 
@@ -242,7 +242,7 @@ function print_default_shipping_status()
         }
     }
     echo '</select>';
-    echo '<div class="help-box info-text">Los pedidos con este estado serán enviados automáticamente a Zippin</div>';
+    echo '<div class="help-box info-text">Los pedidos con este estado serán enviados automáticamente a Zipnova</div>';
 }
 
 function print_free_shipping_creation()
@@ -250,8 +250,8 @@ function print_free_shipping_creation()
     $previous_config = get_option('zippin_create_free_shipments');
     echo '<p><label><input type="radio" name="enable_free_shipping_creation" value="yes"'.($previous_config=='yes' ? ' checked':'').'> Si</label> ';
     echo '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="enable_free_shipping_creation" value="no"'.($previous_config=='no' || empty($previous_config) ? ' checked':'').'> No</label></p>';
-    echo '<div class="help-box info-text">Si habilitas esta opción, los envíos con Envío gratis se crearán en Zippin. La selección del transporte será automática según la configuración de tu cuenta. <br>
-<small>Aprende <a href="https://docs.woocommerce.com/document/free-shipping/" target="_blank">cómo configurar envío gratis en Woocomerce</a> y configura en Zippin tus opciones de selección de transporte (solapa Opciones).</small>
+    echo '<div class="help-box info-text">Si habilitas esta opción, los envíos con Envío gratis se crearán en Zipnova. La selección del transporte será automática según la configuración de tu cuenta. <br>
+<small>Aprende <a href="https://docs.woocommerce.com/document/free-shipping/" target="_blank">cómo configurar envío gratis en Woocomerce</a> y configura en Zipnova tus opciones de selección de transporte (solapa Opciones).</small>
 </div>';
 }
 
@@ -271,7 +271,7 @@ function print_additional_charge(){
     echo '<option value="abs" ' . ($previous_config === 'abs' ? 'selected' : '') . '>$</option>';
     echo '</select>';
 
-    echo '<div class="help-box info-text">Usa esta opción si quieres cobrarle un precio de envío distinto tu cliente. Zippin te cobrará el precio real que corresponda para el envío.</div>';
+    echo '<div class="help-box info-text">Usa esta opción si quieres cobrarle un precio de envío distinto tu cliente. Zipnova te cobrará el precio real que corresponda para el envío.</div>';
 
 }
 
@@ -327,14 +327,14 @@ function print_origins()
 
 function print_extra_info()
 {
-    echo '<div class="help-box warning-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zippin_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zippin.</div>';
+    echo '<div class="help-box warning-text">Al instalar este plugin podrás empezar a usar el shortcode <code>[zipnova_tracking]</code>. Coloca este shortcode en cualquier página que desees usar para crear un formulario de seguimiento de pedidos de Zipnova.</div>';
 }
 
 function create_menu_option()
 {
     add_menu_page(
-        'Configuración de Zippin',
-        'Envíos con Zippin',
+        'Configuración de Zipnova',
+        'Envíos con Zipnova',
         'manage_woocommerce',
         'zippin_settings',
         __NAMESPACE__ . '\settings_page_content',
@@ -464,11 +464,11 @@ function settings_page_content()
     ?>
 
 	<div class="wrap">
-        <img src="<?=plugin_dir_url(__FILE__) ?>images/zippin.png" height="50"/>
+        <img src="<?=plugin_dir_url(__FILE__) ?>images/zipnova.png" height="50"/>
         <div class="help-box info-text">
             <b style="font-size: 14px">Ayuda</b><br>
-            <a target="_blank" href="https://ayuda.zippin.app/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce">Guía de configuración del plugin</a> |
-            <a target="_blank" href="https://ayuda.zippin.app/problemas-comunes-con-el-plugin-de-woocommerce">Resolver un problema</a> |
+            <a target="_blank" href="https://ayuda.zipnova.com/instalaci%C3%B3n-y-uso-del-plugin-para-woocommerce">Guía de configuración del plugin</a> |
+            <a target="_blank" href="https://ayuda.zipnova.com/problemas-comunes-con-el-plugin-de-woocommerce">Resolver un problema</a> |
             Versión actual del plugin: <?php echo ZIPPIN_VERSION; ?>
         </div>
 

@@ -25,6 +25,7 @@ add_action('admin_enqueue_scripts', 'Zippin\Zippin\Utils\add_button_css_file');
 
 // --- Tracking shortcode
 add_shortcode('zippin_tracking', 'Zippin\Zippin\Utils\create_shortcode');
+add_shortcode('zipnova_tracking', 'Zippin\Zippin\Utils\create_shortcode');
 
 // --- Webhook handler
 add_action('woocommerce_api_zippin', 'Zippin\Zippin\Utils\handle_webhook');
